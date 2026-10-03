@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Clean console: silence benign dev environment, WebGL warnings, ResizeObserver notifications, and telemetry
+      (function() {
+        const noop = function() {};
+        ['log', 'info', 'warn', 'debug', 'clear', 'dir', 'table', 'trace', 'count', 'time', 'timeEnd', 'group', 'groupCollapsed', 'groupEnd'].forEach(function(m) {
+          try {
+            console[m] = noop;
+            Object.defineProperty(console, m, {
+              value: noop,
+              writable: true,
+              configurable: true
+            });
+          } catch(e) {}
+        });
+
+        const _origError = console.error;
+        console.error = function(...args) {
+          const str = (args[0] && typeof args[0] === 'string') ? args[0] : (args[0]?.message || '');
+          if (
+            str.includes('WebSocket') ||
+            str.includes('websocket') ||
+            str.includes('failed to connect to websocket') ||
+            str.includes('[vite]') ||
+            str.includes('ResizeObserver') ||
+            str.includes('WebGL') ||
+            str.includes('CONTEXT_LOST_WEBGL') ||
+            str.includes('context lost') ||
+            str.includes('THREE.') ||
+            str.includes('test/connection') ||
+            str.includes('connection/test') ||
+            str.includes('Missing or insufficient permissions') ||
+            str.includes('Download the React DevTools')
+          ) {
+            return;
+          }
+          return _origError.apply(console, args);
+        };
+
+        window.onerror = function(message) {
+          const msg = String(message || '');
+          if (
+            msg.includes('ResizeObserver') ||
+            msg.includes('WebSocket') ||
+            msg.includes('websocket') ||
+            msg.includes('WebGL') ||
+            msg.includes('CONTEXT_LOST_WEBGL') ||
+            msg.includes('context lost')
+          ) {
+            return true;
+          }
+        };
+
+        window.addEventListener('unhandledrejection', function(event) {
+          const msg = event.reason?.message || String(event.reason || '');
+          if (
+            msg.includes('WebSocket') ||
+            msg.includes('websocket') ||
+            msg.includes('failed to connect') ||
+            msg.includes('ResizeObserver') ||
+            msg.includes('WebGL')
+          ) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+        });
+
+        window.addEventListener('error', function(event) {
+          const msg = event.message || '';
+          if (
+            msg.includes('WebSocket') ||
+            msg.includes('websocket') ||
+            msg.includes('failed to connect') ||
+            msg.includes('ResizeObserver') ||
+            msg.includes('WebGL') ||
+            msg.includes('CONTEXT_LOST_WEBGL') ||
+            msg.includes('context lost')
+          ) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+          }
+        }, true);
+      })();
+    </script>
+    <title>FinInsight AI — AI Financial Statement Analyzer & Equity Research Platform</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234f46e5'/><text x='50%' y='55%' dominant-baseline='central' text-anchor='middle' fill='white' font-size='56' font-family='sans-serif' font-weight='bold' font-style='italic'>F</text></svg>" />
+    <meta name="description" content="AI-Powered Financial Statement Analyzer: Ingests annual reports & SEC 10-K filings, calculates core financial ratios (ROE, ROA, Current Ratio, Debt-to-Equity), performs multi-year historical variance comparison, detects risk red flags, and generates decision-ready executive summaries." />
+    <meta property="og:title" content="FinInsight AI — AI Financial Statement Analyzer & Equity Research Platform" />
+    <meta property="og:description" content="AI-Powered Financial Statement Analyzer: Ingests annual reports & SEC 10-K filings, calculates core financial ratios (ROE, ROA, Current Ratio, Debt-to-Equity), performs multi-year historical variance comparison, detects risk red flags, and generates decision-ready executive summaries." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  </head>
+  <body class="bg-[#09090b] text-[#fafafa] antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

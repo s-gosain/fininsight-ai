@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+:root {
+  /* Fluid spacing variables using CSS clamp() */
+  --space-2xs: clamp(0.25rem, 0.2rem + 0.2vw, 0.375rem);
+  --space-xs: clamp(0.375rem, 0.3rem + 0.35vw, 0.5rem);
+  --space-sm: clamp(0.5rem, 0.45rem + 0.4vw, 0.75rem);
+  --space-md: clamp(0.75rem, 0.65rem + 0.6vw, 1.125rem);
+  --space-lg: clamp(1rem, 0.85rem + 0.9vw, 1.5rem);
+  --space-xl: clamp(1.5rem, 1.2rem + 1.4vw, 2.25rem);
+  --space-2xl: clamp(2rem, 1.6rem + 1.8vw, 3rem);
+
+  /* WCAG-compliant touch target sizes (min 44px on smaller screens / touch devices) */
+  --touch-target-min: clamp(40px, 8.5vw, 44px);
+  --touch-py: clamp(0.5rem, 1.2vw, 0.625rem);
+  --touch-px: clamp(0.75rem, 2vw, 1.125rem);
+  --btn-touch-min-height: clamp(38px, 6vw, 44px);
+  --container-padding: clamp(0.75rem, 2.5vw, 1.75rem);
+}
+
+@layer base {
+  /* Fluid typography system with CSS clamp() for automatic responsive hierarchy */
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background-color: #09090b;
+    color: #fafafa;
+    font-size: clamp(0.875rem, 0.82rem + 0.25vw, 1rem);
+    line-height: 1.6;
+  }
+
+  h1, .text-fluid-h1 {
+    font-size: clamp(1.65rem, 1.25rem + 1.8vw, 2.5rem);
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+  }
+
+  h2, .text-fluid-h2 {
+    font-size: clamp(1.3rem, 1.05rem + 1.2vw, 1.875rem);
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+  }
+
+  h3, .text-fluid-h3 {
+    font-size: clamp(1.1rem, 0.95rem + 0.75vw, 1.45rem);
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+  }
+
+  h4, .text-fluid-h4 {
+    font-size: clamp(0.95rem, 0.9rem + 0.3vw, 1.15rem);
+    line-height: 1.35;
+  }
+
+  p, .text-fluid-body {
+    font-size: clamp(0.8125rem, 0.77rem + 0.2vw, 0.9375rem);
+    line-height: 1.55;
+  }
+
+  .font-serif {
+    font-family: 'Newsreader', Georgia, Cambria, 'Times New Roman', Times, serif;
+  }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+}
+
+/* Touch accessibility enforcement for smaller screens & touch viewports */
+@media (pointer: coarse), (max-width: 768px) {
+  button:not(.no-touch-expand), 
+  [role="button"]:not(.no-touch-expand),
+  select:not(.no-touch-expand) {
+    min-height: var(--btn-touch-min-height);
+  }
+}
+
+/* Global utility classes for aspect-ratio preservation and max-width scaling of dashboard components */
+.dashboard-visual-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.aspect-chart-responsive {
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 240px;
+  max-height: 480px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .aspect-chart-responsive {
+    aspect-ratio: 4 / 3;
+    min-height: 210px;
+  }
+}
+
+/* Universal visual containment: prevents SVG and canvas charts from overflowing viewport */
+.visual-containment {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  contain: paint;
+}
+
+.visual-containment svg,
+.visual-containment canvas,
+.visual-containment .recharts-responsive-container,
+.dashboard-visual-container svg,
+.dashboard-visual-container canvas,
+.dashboard-visual-container .recharts-responsive-container {
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+
+.table-responsive-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 0.75rem;
+}
+
+/* Sophisticated Dark custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #09090b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+/* Subtle pulse loading animation for ERP data reconciliation indicator */
+@keyframes erpReconcilePulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.95;
+    filter: drop-shadow(0 0 2px rgba(245, 158, 11, 0.4));
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.6;
+    filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.8));
+  }
+}
+
+.animate-erp-pulse {
+  animation: erpReconcilePulse 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

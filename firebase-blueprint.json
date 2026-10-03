@@ -1,0 +1,60 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "User account information and authentication profile",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "photoURL": { "type": "string", "maxLength": 512 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "SavedAnalysis": {
+      "title": "Saved Financial Analysis",
+      "description": "User saved financial datasets, models, and custom notes",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "companyName": { "type": "string", "maxLength": 128 },
+        "ticker": { "type": "string", "maxLength": 32 },
+        "industry": { "type": "string", "maxLength": 128 },
+        "notes": { "type": "string", "maxLength": 2000 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "companyName", "ticker"]
+    },
+    "UserPreferences": {
+      "title": "User Preferences",
+      "description": "User dashboard configuration and analytical preferences",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "currency": { "type": "string", "maxLength": 8 },
+        "preferredTab": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User account record"
+    },
+    "/users/{userId}/analyses/{analysisId}": {
+      "schema": "SavedAnalysis",
+      "description": "Saved financial models belonging to user"
+    },
+    "/users/{userId}/preferences/{prefId}": {
+      "schema": "UserPreferences",
+      "description": "User preferences and workspace layout configuration"
+    }
+  }
+}

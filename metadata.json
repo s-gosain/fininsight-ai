@@ -1,0 +1,6 @@
+{
+  "name": "FinInsight AI — AI Financial Statement Analyzer",
+  "description": "AI-Powered Financial Statement Analyzer: Ingests annual reports & SEC 10-K filings, calculates core financial ratios (ROE, ROA, Current Ratio, Debt-to-Equity), performs multi-year historical variance comparison, detects risk red flags, and generates decision-ready executive summaries.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
