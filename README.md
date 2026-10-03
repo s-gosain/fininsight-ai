@@ -7,7 +7,6 @@
 [![Google Gemini](https://img.shields.io/badge/AI_Engine-Gemini_GenAI_SDK-8E75C2?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
 [![Firebase](https://img.shields.io/badge/Security-Firebase_OAuth_%26_Firestore-FFA611?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
 
-> **Live Production Prototype:** [https://ais-pre-atrecd66srivwkn77p67mz-907830785373.asia-southeast1.run.app](https://ais-pre-atrecd66srivwkn77p67mz-907830785373.asia-southeast1.run.app)
 
 ---
 
