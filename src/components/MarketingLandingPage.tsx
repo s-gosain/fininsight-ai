@@ -34,6 +34,8 @@ import {
 import { SAMPLE_DATASETS } from '../data/sampleDatasets';
 import { calculateFinancialRatios, evaluateFinancialHealth, detectRedFlags } from '../utils/financialCalculations';
 import { AuthUser } from '../types';
+import { ThreeDCard } from './ThreeDCard';
+import { useGlobalCardTilt } from '../utils/useCardTilt';
 
 interface SegmentTransitionProps {
   targetId: string;
@@ -158,14 +160,162 @@ interface MarketingLandingPageProps {
   onCompleteAuth?: (user: AuthUser) => void;
 }
 
+interface SecEdgarFeedItem {
+  id: string;
+  ticker: string;
+  companyName: string;
+  filingType: '10-K' | '10-Q';
+  metricLabel: string;
+  metricValue: string;
+  status: 'Verified' | 'Clean' | 'Audited';
+  statusTheme: 'emerald' | 'cyan' | 'indigo';
+  timestamp: string;
+}
+
+const ALL_SEC_FILINGS: SecEdgarFeedItem[] = [
+  {
+    id: 'aapl',
+    ticker: 'AAPL',
+    companyName: 'Apple Inc.',
+    filingType: '10-K',
+    metricLabel: 'DuPont ROE',
+    metricValue: '107.5%',
+    status: 'Verified',
+    statusTheme: 'emerald',
+    timestamp: 'Just now',
+  },
+  {
+    id: 'nvda',
+    ticker: 'NVDA',
+    companyName: 'NVIDIA Corp',
+    filingType: '10-Q',
+    metricLabel: 'Gross Margin',
+    metricValue: '75.1%',
+    status: 'Clean',
+    statusTheme: 'cyan',
+    timestamp: '14s ago',
+  },
+  {
+    id: 'msft',
+    ticker: 'MSFT',
+    companyName: 'Microsoft Corp',
+    filingType: '10-K',
+    metricLabel: 'Cloud Revenue',
+    metricValue: '+29%',
+    status: 'Audited',
+    statusTheme: 'indigo',
+    timestamp: '38s ago',
+  },
+  {
+    id: 'amzn',
+    ticker: 'AMZN',
+    companyName: 'Amazon.com Inc.',
+    filingType: '10-K',
+    metricLabel: 'AWS Margin',
+    metricValue: '38.1%',
+    status: 'Verified',
+    statusTheme: 'emerald',
+    timestamp: 'Just now',
+  },
+  {
+    id: 'googl',
+    ticker: 'GOOGL',
+    companyName: 'Alphabet Inc.',
+    filingType: '10-Q',
+    metricLabel: 'Operating Margin',
+    metricValue: '32.4%',
+    status: 'Clean',
+    statusTheme: 'cyan',
+    timestamp: 'Just now',
+  },
+  {
+    id: 'meta',
+    ticker: 'META',
+    companyName: 'Meta Platforms',
+    filingType: '10-K',
+    metricLabel: 'FCF Margin',
+    metricValue: '36.8%',
+    status: 'Audited',
+    statusTheme: 'indigo',
+    timestamp: 'Just now',
+  },
+  {
+    id: 'tsla',
+    ticker: 'TSLA',
+    companyName: 'Tesla Inc.',
+    filingType: '10-Q',
+    metricLabel: 'Auto Margin',
+    metricValue: '17.1%',
+    status: 'Clean',
+    statusTheme: 'cyan',
+    timestamp: 'Just now',
+  },
+  {
+    id: 'jpm',
+    ticker: 'JPM',
+    companyName: 'JPMorgan Chase',
+    filingType: '10-K',
+    metricLabel: 'CET1 Ratio',
+    metricValue: '15.0%',
+    status: 'Verified',
+    statusTheme: 'emerald',
+    timestamp: 'Just now',
+  },
+];
+
+const SEC_TICKER_STREAM = [
+  { symbol: 'AAPL', form: '10-K', metric: 'ROE 107.5%', change: '+4.2%' },
+  { symbol: 'NVDA', form: '10-Q', metric: 'Margin 75.1%', change: '+12.8%' },
+  { symbol: 'MSFT', form: '10-K', metric: 'Cloud +29%', change: '+2.4%' },
+  { symbol: 'AMZN', form: '10-K', metric: 'AWS +19%', change: '+5.1%' },
+  { symbol: 'GOOGL', form: '10-Q', metric: 'Ad Rev +14%', change: '+3.7%' },
+  { symbol: 'META', form: '10-K', metric: 'FCF $43B', change: '+8.6%' },
+  { symbol: 'TSLA', form: '10-Q', metric: 'Delivery +38%', change: '+1.9%' },
+  { symbol: 'JPM', form: '10-K', metric: 'CET1 15.0%', change: '+1.2%' },
+];
+
 export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
   onLaunchDemo,
   onStartOnboarding,
 }) => {
+  useGlobalCardTilt();
   const mountRef = useRef<HTMLDivElement>(null);
   const [selectedPreviewDataset, setSelectedPreviewDataset] = useState(SAMPLE_DATASETS[0]);
   const [sceneMode, setSceneMode] = useState<'volatility' | 'constellation' | 'matrix'>('volatility');
   const [is3dPaused, setIs3dPaused] = useState(false);
+
+  // Live SEC EDGAR Filing Ticker & Feed State (updates timely every 3.8s)
+  const [feedItems, setFeedItems] = useState<SecEdgarFeedItem[]>(ALL_SEC_FILINGS.slice(0, 3));
+  const [feedIndex, setFeedIndex] = useState(3);
+  const [isFeedPaused, setIsFeedPaused] = useState(false);
+  const [filingsCount, setFilingsCount] = useState(1482);
+  const [justUpdated, setJustUpdated] = useState(false);
+
+  // Dynamic timely ingestion stream: rotates new SEC filings into top slot with distinct companies
+  useEffect(() => {
+    if (isFeedPaused) return;
+
+    const interval = setInterval(() => {
+      setFeedIndex((prevIdx) => {
+        const len = ALL_SEC_FILINGS.length;
+        const i0 = prevIdx % len;
+        const i1 = (prevIdx - 1 + len) % len;
+        const i2 = (prevIdx - 2 + len) % len;
+
+        setFeedItems([
+          { ...ALL_SEC_FILINGS[i0], timestamp: 'Just now' },
+          { ...ALL_SEC_FILINGS[i1], timestamp: '14s ago' },
+          { ...ALL_SEC_FILINGS[i2], timestamp: '38s ago' },
+        ]);
+        setFilingsCount((c) => c + 1);
+        setJustUpdated(true);
+        setTimeout(() => setJustUpdated(false), 800);
+        return prevIdx + 1;
+      });
+    }, 4200);
+
+    return () => clearInterval(interval);
+  }, [isFeedPaused]);
 
   // Calculate live preview metrics for the interactive teaser card
   const previewRatios = React.useMemo(() => {
@@ -449,13 +599,13 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
       </nav>
 
       {/* 2. Hero Section with Interactive 3D Backdrop */}
-      <section className="relative z-10 pt-8 pb-10 sm:pt-12 sm:pb-14 lg:pt-14 lg:pb-12 overflow-hidden min-h-[calc(100vh-68px)] flex flex-col justify-between">
+      <section className="relative z-10 pt-6 pb-10 sm:pt-12 sm:pb-14 lg:pt-14 lg:pb-12 overflow-x-hidden min-h-[calc(100vh-68px)] flex flex-col justify-between">
         <div className="absolute inset-0 bg-gradient-to-t from-[#09090b]/50 via-transparent to-transparent pointer-events-none" />
         <div className="absolute inset-0 bg-radial from-indigo-500/10 via-transparent to-transparent pointer-events-none" />
 
         {/* Hero Main Content Container */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full my-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
             
             {/* Left Column: Hero Copy & Actions */}
             <div className="lg:col-span-7 text-center sm:text-left">
@@ -475,7 +625,7 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
               </h1>
 
               {/* Subheading */}
-              <p className="text-sm sm:text-base lg:text-[17px] text-[#a1a1aa] leading-relaxed mb-6 sm:mb-8 max-w-xl font-normal text-balance sm:text-left">
+              <p className="text-sm sm:text-base lg:text-[17px] text-[#a1a1aa] leading-relaxed mb-6 sm:mb-8 max-w-xl font-normal text-balance sm:text-left mx-auto sm:mx-0">
                 Autonomous SEC 10-K report parsing, DuPont variance decomposition, Beneish M-Score manipulation detection, and Monte Carlo predictive forecasting engineered for CFOs, auditors, and private equity teams.
               </p>
 
@@ -501,7 +651,7 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
               </div>
 
               {/* Trust Badges */}
-              <div className="flex items-center gap-5 sm:gap-7 flex-wrap text-xs text-[#a1a1aa] font-medium justify-center sm:justify-start">
+              <div className="flex items-center gap-4 sm:gap-7 flex-wrap text-xs text-[#a1a1aa] font-medium justify-center sm:justify-start">
                 <div className="flex items-center gap-1.5">
                   <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span>SOC 2 Type II Certified</span>
@@ -517,87 +667,138 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
               </div>
             </div>
 
-            {/* Right Column: Live Forensic HUD Telemetry Card (Desktop Anchor) */}
-            <div className="hidden lg:block lg:col-span-5">
-              <div className="relative group">
-                {/* Glow ring under card */}
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500/30 to-emerald-500/30 rounded-2xl blur-lg opacity-40 group-hover:opacity-60 transition duration-500" />
-                
-                <div className="relative bg-[#18181b]/85 backdrop-blur-xl border border-[#27272a] rounded-2xl p-5 shadow-2xl">
-                  {/* Card Header */}
-                  <div className="flex items-center justify-between pb-3.5 border-b border-[#27272a]">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                      <span className="text-xs font-semibold text-white tracking-wide">Live Forensic Telemetry</span>
+            {/* Right Column: Live SEC EDGAR Filing Ticker & Auditor Feed Card (Responsive across mobile, tablet, laptop & large screens) */}
+            <div className="col-span-1 lg:col-span-5 w-full mt-6 lg:mt-0 max-w-lg mx-auto lg:max-w-none">
+              <ThreeDCard roundedClassName="rounded-3xl" depth={5} scale={1.012}>
+                <div className="relative group">
+                  {/* Subtle soft ambient depth (understated & non-illuminating) */}
+                  <div className="absolute -inset-1 bg-indigo-500/10 rounded-3xl blur-xl opacity-25 pointer-events-none" />
+                  
+                  {/* Card Container with clean subtle border */}
+                  <div className="relative bg-[#0d0e13]/95 backdrop-blur-xl border border-[#27272a] hover:border-[#38383f] rounded-3xl p-4 sm:p-5 shadow-2xl shadow-black/80 space-y-3 transition-colors">
+                    
+                    {/* Card Header with Live Toggle & Pulse */}
+                    <div className="flex items-center justify-between pb-2.5 border-b border-[#22232a]">
+                      <div className="flex items-center gap-2.5">
+                        <div className="relative flex items-center justify-center">
+                          <span className={`w-2.5 h-2.5 rounded-full ${isFeedPaused ? 'bg-amber-400/60' : 'bg-emerald-400/60 animate-ping'} absolute opacity-60`} />
+                          <span className={`w-2 h-2 rounded-full ${isFeedPaused ? 'bg-amber-400' : 'bg-emerald-400'} relative`} />
+                        </div>
+                        <div>
+                          <h2 className="text-xs font-bold text-white tracking-tight">
+                            Live SEC EDGAR Filing Ticker
+                          </h2>
+                          <p className="text-[10px] text-[#71717a] font-mono">Autonomous Ingestion & Audit Feed</p>
+                        </div>
+                      </div>
+                      
+                      <button
+                        onClick={() => setIsFeedPaused((prev) => !prev)}
+                        title={isFeedPaused ? 'Click to resume live stream' : 'Click to pause feed'}
+                        className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium transition-all cursor-pointer ${
+                          isFeedPaused
+                            ? 'bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20'
+                            : 'bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 hover:bg-emerald-500/20'
+                        }`}
+                      >
+                        <Activity className={`w-3 h-3 ${isFeedPaused ? '' : 'animate-pulse'}`} />
+                        <span>{isFeedPaused ? 'PAUSED' : 'LIVE FEED'}</span>
+                      </button>
                     </div>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                      SEC 10-K PARSED
-                    </span>
-                  </div>
 
-                  {/* Company & Risk Flag Summary */}
-                  <div className="py-3 flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-bold text-white">Apple Inc. (AAPL)</p>
-                      <p className="text-[11px] text-[#71717a] font-mono">FY2024 Audited Filing · USD</p>
+                    {/* Continuous Live Ticker Stream Ribbon */}
+                    <div className="overflow-hidden py-1.5 px-2 rounded-lg bg-[#08090c] border border-[#202127]">
+                      <div className="animate-ticker text-[10px] font-mono whitespace-nowrap select-none">
+                        {/* 1st copy */}
+                        {SEC_TICKER_STREAM.map((t, idx) => (
+                          <span key={`t1-${idx}`} className="inline-flex items-center gap-1.5 mr-5 shrink-0">
+                            <span className="font-bold text-white tracking-tight">{t.symbol}</span>
+                            <span className="text-[9px] px-1 py-0.2 rounded bg-[#18181b] text-[#71717a]">{t.form}</span>
+                            <span className="text-cyan-400 font-semibold">{t.metric}</span>
+                            <span className="text-emerald-400 font-semibold">{t.change}</span>
+                            <span className="text-[#3f3f46]">·</span>
+                          </span>
+                        ))}
+                        {/* 2nd duplicated copy for seamless infinite loop */}
+                        {SEC_TICKER_STREAM.map((t, idx) => (
+                          <span key={`t2-${idx}`} className="inline-flex items-center gap-1.5 mr-5 shrink-0">
+                            <span className="font-bold text-white tracking-tight">{t.symbol}</span>
+                            <span className="text-[9px] px-1 py-0.2 rounded bg-[#18181b] text-[#71717a]">{t.form}</span>
+                            <span className="text-cyan-400 font-semibold">{t.metric}</span>
+                            <span className="text-emerald-400 font-semibold">{t.change}</span>
+                            <span className="text-[#3f3f46]">·</span>
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="text-xs font-mono font-bold text-emerald-400">Low Risk</span>
-                      <p className="text-[10px] text-[#71717a] font-mono">0 Manipulation Flags</p>
-                    </div>
-                  </div>
 
-                  {/* DuPont 3-Factor Mini-Decomposition */}
-                  <div className="space-y-2 py-2 bg-[#121214] p-3 rounded-xl border border-[#27272a]/60">
-                    <div className="flex justify-between text-[11px] font-mono">
-                      <span className="text-[#a1a1aa]">DuPont ROE Factor</span>
-                      <span className="text-indigo-300 font-bold">107.5%</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-1.5 pt-1 text-[10px] font-mono text-[#71717a]">
-                      <div className="bg-[#18181b] p-1.5 rounded border border-[#27272a]">
-                        <span className="block text-[9px] text-[#71717a]">Net Margin</span>
-                        <span className="text-emerald-400 font-semibold">24.6%</span>
-                      </div>
-                      <div className="bg-[#18181b] p-1.5 rounded border border-[#27272a]">
-                        <span className="block text-[9px] text-[#71717a]">Turnover</span>
-                        <span className="text-cyan-400 font-semibold">1.12x</span>
-                      </div>
-                      <div className="bg-[#18181b] p-1.5 rounded border border-[#27272a]">
-                        <span className="block text-[9px] text-[#71717a]">Leverage</span>
-                        <span className="text-indigo-400 font-semibold">3.88x</span>
-                      </div>
-                    </div>
-                  </div>
+                    {/* Feed Items List (Timed Dynamic Stream) */}
+                    <div className="space-y-2">
+                      {feedItems.map((item, idx) => {
+                        const isTopNew = idx === 0 && justUpdated;
+                        return (
+                          <div
+                            key={`${item.id}-${item.timestamp}-${idx}`}
+                            className={`p-2.5 rounded-xl border transition-all duration-300 flex items-center justify-between gap-3 group/row cursor-default ${
+                              isTopNew
+                                ? 'bg-[#151720] border-emerald-500/35'
+                                : 'bg-[#111218]/90 hover:bg-[#161720] border-[#22232a]'
+                            }`}
+                          >
+                            {/* Company & Filing Type */}
+                            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
+                              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-600/10 border border-indigo-500/20 text-indigo-300 font-bold text-xs flex items-center justify-center font-mono shrink-0">
+                                {item.ticker.slice(0, 2)}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5 truncate">
+                                  <span className="text-xs font-bold text-white tracking-tight">{item.ticker}</span>
+                                  <span className="text-[11px] text-[#71717a] truncate max-w-[85px] sm:max-w-none">({item.companyName})</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#a1a1aa] mt-0.5">
+                                  <span className="px-1.5 py-0.2 rounded bg-[#1f2026] text-[#a1a1aa] font-medium text-[9px]">
+                                    {item.filingType} filed
+                                  </span>
+                                  <span>·</span>
+                                  <span className={idx === 0 ? 'text-emerald-400 font-medium' : 'text-[#71717a]'}>
+                                    {item.timestamp}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
 
-                  {/* Forensic Model Indicators */}
-                  <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
-                    <div className="p-2.5 rounded-lg bg-[#121214] border border-[#27272a]/80">
-                      <div className="flex items-center justify-between text-[10px] text-[#71717a] font-mono">
-                        <span>Beneish M-Score</span>
-                        <span className="text-emerald-400 font-bold">-2.78</span>
-                      </div>
-                      <p className="text-[10px] text-[#a1a1aa] mt-0.5">Non-Manipulator Range</p>
+                            {/* Metric & Status */}
+                            <div className="text-right shrink-0">
+                              <div className="text-xs font-mono font-bold text-white">
+                                <span className="text-[10px] text-[#71717a] font-normal mr-1">{item.metricLabel}</span>
+                                <span className={item.statusTheme === 'emerald' ? 'text-emerald-400' : item.statusTheme === 'cyan' ? 'text-cyan-400' : 'text-indigo-300'}>
+                                  {item.metricValue}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-end gap-1 text-[10px] font-mono mt-0.5">
+                                <CheckCircle2 className={`w-3 h-3 ${item.statusTheme === 'emerald' ? 'text-emerald-400' : item.statusTheme === 'cyan' ? 'text-cyan-400' : 'text-indigo-400'}`} />
+                                <span className={item.statusTheme === 'emerald' ? 'text-emerald-300' : item.statusTheme === 'cyan' ? 'text-cyan-300' : 'text-indigo-300'}>
+                                  {item.status}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <div className="p-2.5 rounded-lg bg-[#121214] border border-[#27272a]/80">
-                      <div className="flex items-center justify-between text-[10px] text-[#71717a] font-mono">
-                        <span>Altman Z-Score</span>
-                        <span className="text-cyan-400 font-bold">4.21</span>
-                      </div>
-                      <p className="text-[10px] text-[#a1a1aa] mt-0.5">Safe Solvency Zone</p>
-                    </div>
-                  </div>
 
-                  {/* Interactive Button */}
-                  <button
-                    onClick={onLaunchDemo}
-                    className="w-full mt-3 py-2 px-3 rounded-lg bg-indigo-600/15 hover:bg-indigo-600/25 border border-indigo-500/30 text-indigo-300 hover:text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <BarChart2 className="w-3.5 h-3.5" />
-                    <span>Launch 3D Capital Structure Workspace</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
+                    {/* Card Bottom: Ingestion Stats & Live Latency */}
+                    <div className="pt-2 flex items-center justify-between border-t border-[#22232a] text-[11px]">
+                      <div className="flex items-center gap-1.5 text-[#71717a] font-mono text-[10px]">
+                        <Zap className="w-3 h-3 text-cyan-400" />
+                        <span><span className="text-[#e4e4e7] font-semibold">{filingsCount.toLocaleString()}</span> audited today</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-emerald-400/80">&lt;120ms Latency</span>
+                    </div>
+
+                  </div>
                 </div>
-              </div>
+              </ThreeDCard>
             </div>
 
           </div>
@@ -606,7 +807,7 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
         {/* Live Stat Banner */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 sm:mt-10 lg:mt-12 w-full">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 p-4 sm:p-5 bg-[#18181b]/70 backdrop-blur-md rounded-2xl border border-[#27272a] shadow-xl">
-            <div className="p-2 sm:p-3">
+            <div data-tilt-card="true" data-tilt-max="5" data-tilt-scale="1.015" className="relative p-2 sm:p-3 rounded-xl hover:bg-[#202025] transition-colors">
               <p className="text-[11px] font-mono text-[#71717a] uppercase tracking-wider mb-1">Ingested Asset Volume</p>
               <p className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white tracking-tight">$48.2B+</p>
               <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1 font-mono">
@@ -614,7 +815,7 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
               </p>
             </div>
 
-            <div className="p-2 sm:p-3 border-l border-[#27272a]/80">
+            <div data-tilt-card="true" data-tilt-max="5" data-tilt-scale="1.015" className="relative p-2 sm:p-3 border-l border-[#27272a]/80 rounded-xl hover:bg-[#202025] transition-colors">
               <p className="text-[11px] font-mono text-[#71717a] uppercase tracking-wider mb-1">Anomaly Precision</p>
               <p className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white tracking-tight">99.4%</p>
               <p className="text-xs text-indigo-400 mt-1 flex items-center gap-1 font-mono">
@@ -622,7 +823,7 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
               </p>
             </div>
 
-            <div className="p-2 sm:p-3 border-t md:border-t-0 md:border-l border-[#27272a]/80">
+            <div data-tilt-card="true" data-tilt-max="5" data-tilt-scale="1.015" className="relative p-2 sm:p-3 border-t md:border-t-0 md:border-l border-[#27272a]/80 rounded-xl hover:bg-[#202025] transition-colors">
               <p className="text-[11px] font-mono text-[#71717a] uppercase tracking-wider mb-1">Calculation Latency</p>
               <p className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white tracking-tight">&lt;120ms</p>
               <p className="text-xs text-cyan-400 mt-1 flex items-center gap-1 font-mono">
@@ -630,7 +831,7 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
               </p>
             </div>
 
-            <div className="p-2 sm:p-3 border-t md:border-t-0 md:border-l border-[#27272a]/80">
+            <div data-tilt-card="true" data-tilt-max="5" data-tilt-scale="1.015" className="relative p-2 sm:p-3 border-t md:border-t-0 md:border-l border-[#27272a]/80 rounded-xl hover:bg-[#202025] transition-colors">
               <p className="text-[11px] font-mono text-[#71717a] uppercase tracking-wider mb-1">Public Benchmarks</p>
               <p className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white tracking-tight">500+ Peers</p>
               <p className="text-xs text-emerald-400 mt-1 flex items-center gap-1 font-mono">
@@ -690,90 +891,83 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
           </div>
 
           {/* Interactive Teaser Dashboard Card */}
-          <div className="bg-[#18181b]/85 backdrop-blur-md border border-[#27272a] rounded-2xl p-6 sm:p-8 shadow-2xl">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-[#27272a]">
-              <div>
-                <div className="flex items-center gap-3">
-                  <h3 className="text-xl font-bold text-white tracking-tight">
-                    {selectedPreviewDataset.companyName}
-                  </h3>
-                  <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-xs font-mono font-semibold border border-emerald-500/30">
-                    Health: {previewHealth.overallStatus} ({previewHealth.score}/100)
-                  </span>
+          <ThreeDCard roundedClassName="rounded-2xl" depth={3} scale={1.006}>
+            <div className="bg-[#18181b]/85 backdrop-blur-md border border-[#27272a] rounded-2xl p-6 sm:p-8 shadow-2xl">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-[#27272a]">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-xl font-bold text-white tracking-tight">
+                      {selectedPreviewDataset.companyName}
+                    </h3>
+                    <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-xs font-mono font-semibold border border-emerald-500/30">
+                      Health: {previewHealth.overallStatus} ({previewHealth.score}/100)
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#71717a] mt-1 font-mono">
+                    Industry: {selectedPreviewDataset.industry} • Reporting Base: {selectedPreviewDataset.reportingCurrency} • Active Period: {selectedPreviewDataset.activePeriod}
+                  </p>
                 </div>
-                <p className="text-xs text-[#71717a] mt-1 font-mono">
-                  Industry: {selectedPreviewDataset.industry} • Reporting Base: {selectedPreviewDataset.reportingCurrency} • Active Period: {selectedPreviewDataset.activePeriod}
-                </p>
               </div>
 
-              {/* Action to Jump to Full Demo */}
-              <button
-                onClick={onLaunchDemo}
-                className="px-4 py-2 rounded-lg bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 text-xs font-bold flex items-center gap-1.5 transition-all self-start lg:self-auto cursor-pointer"
-              >
-                <span>Launch Full Multi-Tab Workspace</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
+              {/* Quick Metrics Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 py-6">
+                <div data-tilt-card="true" data-tilt-max="8" data-tilt-scale="1.03" className="relative p-3 rounded-xl bg-[#09090b]/80 border border-[#27272a] hover:border-indigo-500/40 transition-colors">
+                  <p className="text-[10px] font-mono text-[#71717a]">Operating Margin</p>
+                  <p className="text-base sm:text-lg font-bold text-white mt-1">
+                    {(previewRatios.operatingMargin * 100).toFixed(1)}%
+                  </p>
+                  <span className="text-[10px] text-emerald-400 font-mono">Profitable</span>
+                </div>
+
+                <div data-tilt-card="true" data-tilt-max="8" data-tilt-scale="1.03" className="relative p-3 rounded-xl bg-[#09090b]/80 border border-[#27272a] hover:border-indigo-500/40 transition-colors">
+                  <p className="text-[10px] font-mono text-[#71717a]">Return on Equity (ROE)</p>
+                  <p className="text-base sm:text-lg font-bold text-white mt-1">
+                    {(previewRatios.roe * 100).toFixed(1)}%
+                  </p>
+                  <span className="text-[10px] text-indigo-400 font-mono">DuPont Factor</span>
+                </div>
+
+                <div data-tilt-card="true" data-tilt-max="8" data-tilt-scale="1.03" className="relative p-3 rounded-xl bg-[#09090b]/80 border border-[#27272a] hover:border-indigo-500/40 transition-colors">
+                  <p className="text-[10px] font-mono text-[#71717a]">Current Ratio</p>
+                  <p className="text-base sm:text-lg font-bold text-white mt-1">
+                    {previewRatios.currentRatio.toFixed(2)}x
+                  </p>
+                  <span className="text-[10px] text-emerald-400 font-mono">Solvent</span>
+                </div>
+
+                <div data-tilt-card="true" data-tilt-max="8" data-tilt-scale="1.03" className="relative p-3 rounded-xl bg-[#09090b]/80 border border-[#27272a] hover:border-indigo-500/40 transition-colors">
+                  <p className="text-[10px] font-mono text-[#71717a]">Quick Ratio</p>
+                  <p className="text-base sm:text-lg font-bold text-white mt-1">
+                    {previewRatios.quickRatio.toFixed(2)}x
+                  </p>
+                  <span className="text-[10px] text-emerald-400 font-mono">Liquid</span>
+                </div>
+
+                <div data-tilt-card="true" data-tilt-max="8" data-tilt-scale="1.03" className="relative p-3 rounded-xl bg-[#09090b]/80 border border-[#27272a] hover:border-indigo-500/40 transition-colors">
+                  <p className="text-[10px] font-mono text-[#71717a]">Debt-to-Equity</p>
+                  <p className="text-base sm:text-lg font-bold text-white mt-1">
+                    {previewRatios.debtToEquity.toFixed(2)}x
+                  </p>
+                  <span className="text-[10px] text-indigo-400 font-mono">Leverage</span>
+                </div>
+
+                <div data-tilt-card="true" data-tilt-max="8" data-tilt-scale="1.03" className="relative p-3 rounded-xl bg-[#09090b]/80 border border-[#27272a] hover:border-indigo-500/40 transition-colors">
+                  <p className="text-[10px] font-mono text-[#71717a]">Active Red Flags</p>
+                  <p className={`text-base sm:text-lg font-bold mt-1 ${previewRedFlags.length > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                    {previewRedFlags.length} Detected
+                  </p>
+                  <span className="text-[10px] text-[#71717a] font-mono">Forensic Scan</span>
+                </div>
+              </div>
+
+              {/* Teaser CTA Banner inside Card */}
+              <div className="pt-4 border-t border-[#27272a] flex items-center gap-2 text-xs text-[#a1a1aa]">
+                <Sparkles className="w-4 h-4 text-indigo-400 shrink-0" />
+                <span>Full workspace includes 3D Capital Towers, Monte Carlo Forecasting, and AI Copilot Chat.</span>
+              </div>
+
             </div>
-
-            {/* Quick Metrics Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 py-6">
-              <div className="p-3 rounded-xl bg-[#09090b]/80 border border-[#27272a]">
-                <p className="text-[10px] font-mono text-[#71717a]">Operating Margin</p>
-                <p className="text-base sm:text-lg font-bold text-white mt-1">
-                  {(previewRatios.operatingMargin * 100).toFixed(1)}%
-                </p>
-                <span className="text-[10px] text-emerald-400 font-mono">Profitable</span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-[#09090b]/80 border border-[#27272a]">
-                <p className="text-[10px] font-mono text-[#71717a]">Return on Equity (ROE)</p>
-                <p className="text-base sm:text-lg font-bold text-white mt-1">
-                  {(previewRatios.roe * 100).toFixed(1)}%
-                </p>
-                <span className="text-[10px] text-indigo-400 font-mono">DuPont Factor</span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-[#09090b]/80 border border-[#27272a]">
-                <p className="text-[10px] font-mono text-[#71717a]">Current Ratio</p>
-                <p className="text-base sm:text-lg font-bold text-white mt-1">
-                  {previewRatios.currentRatio.toFixed(2)}x
-                </p>
-                <span className="text-[10px] text-emerald-400 font-mono">Solvent</span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-[#09090b]/80 border border-[#27272a]">
-                <p className="text-[10px] font-mono text-[#71717a]">Quick Ratio</p>
-                <p className="text-base sm:text-lg font-bold text-white mt-1">
-                  {previewRatios.quickRatio.toFixed(2)}x
-                </p>
-                <span className="text-[10px] text-emerald-400 font-mono">Liquid</span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-[#09090b]/80 border border-[#27272a]">
-                <p className="text-[10px] font-mono text-[#71717a]">Debt-to-Equity</p>
-                <p className="text-base sm:text-lg font-bold text-white mt-1">
-                  {previewRatios.debtToEquity.toFixed(2)}x
-                </p>
-                <span className="text-[10px] text-indigo-400 font-mono">Leverage</span>
-              </div>
-
-              <div className="p-3 rounded-xl bg-[#09090b]/80 border border-[#27272a]">
-                <p className="text-[10px] font-mono text-[#71717a]">Active Red Flags</p>
-                <p className={`text-base sm:text-lg font-bold mt-1 ${previewRedFlags.length > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                  {previewRedFlags.length} Detected
-                </p>
-                <span className="text-[10px] text-[#71717a] font-mono">Forensic Scan</span>
-              </div>
-            </div>
-
-            {/* Teaser CTA Banner inside Card */}
-            <div className="pt-4 border-t border-[#27272a] flex items-center gap-2 text-xs text-[#a1a1aa]">
-              <Sparkles className="w-4 h-4 text-indigo-400 shrink-0" />
-              <span>Full workspace includes 3D Capital Towers, Monte Carlo Forecasting, and AI Copilot Chat.</span>
-            </div>
-
-          </div>
+          </ThreeDCard>
 
         </div>
       </section>
@@ -806,7 +1000,7 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             
             {/* Feature 1 */}
-            <div className="p-6 sm:p-8 rounded-2xl bg-[#18181b]/85 backdrop-blur-md border border-[#27272a] hover:border-indigo-500/50 transition-all group">
+            <div data-tilt-card="true" data-tilt-max="5.5" data-tilt-scale="1.018" className="relative p-6 sm:p-8 rounded-2xl bg-[#18181b]/85 backdrop-blur-md border border-[#27272a] hover:border-indigo-500/50 transition-colors group">
               <div className="w-12 h-12 rounded-xl bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
                 <FileSpreadsheet className="w-6 h-6" />
               </div>
@@ -820,7 +1014,7 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
             </div>
 
             {/* Feature 2 */}
-            <div className="p-6 sm:p-8 rounded-2xl bg-[#18181b]/85 backdrop-blur-md border border-[#27272a] hover:border-emerald-500/50 transition-all group">
+            <div data-tilt-card="true" data-tilt-max="5.5" data-tilt-scale="1.018" className="relative p-6 sm:p-8 rounded-2xl bg-[#18181b]/85 backdrop-blur-md border border-[#27272a] hover:border-emerald-500/50 transition-colors group">
               <div className="w-12 h-12 rounded-xl bg-emerald-600/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
                 <ScanEye className="w-6 h-6" />
               </div>
@@ -834,7 +1028,7 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
             </div>
 
             {/* Feature 3 */}
-            <div className="p-6 sm:p-8 rounded-2xl bg-[#18181b]/85 backdrop-blur-md border border-[#27272a] hover:border-cyan-500/50 transition-all group">
+            <div data-tilt-card="true" data-tilt-max="5.5" data-tilt-scale="1.018" className="relative p-6 sm:p-8 rounded-2xl bg-[#18181b]/85 backdrop-blur-md border border-[#27272a] hover:border-cyan-500/50 transition-colors group">
               <div className="w-12 h-12 rounded-xl bg-cyan-600/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
                 <BarChart2 className="w-6 h-6" />
               </div>
@@ -848,7 +1042,7 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
             </div>
 
             {/* Feature 4 */}
-            <div className="p-6 sm:p-8 rounded-2xl bg-[#18181b]/85 backdrop-blur-md border border-[#27272a] hover:border-purple-500/50 transition-all group">
+            <div data-tilt-card="true" data-tilt-max="5.5" data-tilt-scale="1.018" className="relative p-6 sm:p-8 rounded-2xl bg-[#18181b]/85 backdrop-blur-md border border-[#27272a] hover:border-purple-500/50 transition-colors group">
               <div className="w-12 h-12 rounded-xl bg-purple-600/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
                 <Sparkles className="w-6 h-6" />
               </div>
@@ -862,7 +1056,7 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
             </div>
 
             {/* Feature 5 */}
-            <div className="p-6 sm:p-8 rounded-2xl bg-[#18181b]/85 backdrop-blur-md border border-[#27272a] hover:border-amber-500/50 transition-all group">
+            <div data-tilt-card="true" data-tilt-max="5.5" data-tilt-scale="1.018" className="relative p-6 sm:p-8 rounded-2xl bg-[#18181b]/85 backdrop-blur-md border border-[#27272a] hover:border-amber-500/50 transition-colors group">
               <div className="w-12 h-12 rounded-xl bg-amber-600/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
                 <RefreshCw className="w-6 h-6" />
               </div>
@@ -876,7 +1070,7 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
             </div>
 
             {/* Feature 6 */}
-            <div className="p-6 sm:p-8 rounded-2xl bg-[#18181b]/85 backdrop-blur-md border border-[#27272a] hover:border-rose-500/50 transition-all group">
+            <div data-tilt-card="true" data-tilt-max="5.5" data-tilt-scale="1.018" className="relative p-6 sm:p-8 rounded-2xl bg-[#18181b]/85 backdrop-blur-md border border-[#27272a] hover:border-rose-500/50 transition-colors group">
               <div className="w-12 h-12 rounded-xl bg-rose-600/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
                 <TrendingUp className="w-6 h-6" />
               </div>
@@ -952,7 +1146,7 @@ export const MarketingLandingPage: React.FC<MarketingLandingPageProps> = ({
               </div>
             </div>
 
-            <div className="lg:col-span-6 bg-[#18181b]/85 backdrop-blur-md border border-[#27272a] rounded-2xl p-6 sm:p-8 shadow-2xl">
+            <div data-tilt-card="true" data-tilt-max="4.5" data-tilt-scale="1.012" className="relative lg:col-span-6 bg-[#18181b]/85 backdrop-blur-md border border-[#27272a] hover:border-emerald-500/40 rounded-2xl p-6 sm:p-8 shadow-2xl transition-colors">
               <div className="flex items-center justify-between pb-4 border-b border-[#27272a] mb-5">
                 <div className="flex items-center gap-2">
                   <Terminal className="w-4 h-4 text-emerald-400" />

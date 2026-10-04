@@ -23,6 +23,7 @@ import {
   Info,
   ChevronRight,
   ChevronDown,
+  ChevronUp,
   MonitorPlay,
   Share2,
   Volume2,
@@ -48,6 +49,9 @@ export interface Interactive3DVideoDemoProps {
   optInTranscriptOverlay?: boolean;
   defaultShowTranscriptOverlay?: boolean;
   onToggleTranscriptOverlay?: (isOpen: boolean) => void;
+  onToggleCollapse?: () => void;
+  isCollapsed?: boolean;
+  onSkipToAnalysis?: () => void;
 }
 
 interface DemoChapter {
@@ -572,6 +576,9 @@ export const Interactive3DVideoDemo: React.FC<Interactive3DVideoDemoProps> = ({
   optInTranscriptOverlay,
   defaultShowTranscriptOverlay,
   onToggleTranscriptOverlay,
+  onToggleCollapse,
+  isCollapsed = false,
+  onSkipToAnalysis,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1399,33 +1406,58 @@ export const Interactive3DVideoDemo: React.FC<Interactive3DVideoDemoProps> = ({
       onMouseEnter={() => setIsHoveringControls(true)}
       onMouseLeave={() => setIsHoveringControls(false)}
       className={`relative w-full rounded-2xl overflow-hidden border border-[#27272a] bg-[#09090b] shadow-2xl transition-all duration-300 ${
-        isCinemaMode ? 'fixed inset-4 z-50 rounded-2xl' : 'max-w-6xl mx-auto'
+        isCinemaMode ? 'fixed inset-4 z-50 rounded-2xl' : 'w-full mx-auto'
       }`}
     >
       {/* 1. Header Bar of the Interactive 3D Video Working Demo */}
       <div className="bg-[#18181b]/95 backdrop-blur-md px-4 sm:px-5 pt-3.5 pb-3 border-b border-[#27272a] flex flex-col gap-3 z-20 relative">
-        {/* Top-Right Fullscreen Action Icon in a distinct box with subtle hover glow */}
-        <button
-          onClick={() => setIsCinemaMode((prev) => !prev)}
-          title={isCinemaMode ? "Exit Fullscreen Demo" : "Expand Fullscreen Demo"}
-          className="group absolute top-3 right-4 w-7 h-7 rounded-lg bg-[#27272a]/90 hover:bg-[#3f3f46] border border-[#3f3f46]/80 hover:border-indigo-400/80 shadow-md shadow-black/50 hover:shadow-[0_0_14px_rgba(99,102,241,0.65)] text-[#d4d4d8] hover:text-white transition-all duration-300 ease-out cursor-pointer z-30 flex items-center justify-center hover:scale-105 active:scale-95"
-          aria-label={isCinemaMode ? "Exit Fullscreen" : "Fullscreen"}
-        >
-          <span className="relative flex items-center justify-center">
-            {/* Subtle glow aura blur behind icon on hover */}
-            <span className="absolute inset-0 rounded-full bg-indigo-500/0 group-hover:bg-indigo-500/30 blur-xs transition-all duration-300 pointer-events-none" />
-            {isCinemaMode ? (
-              <Minimize2 className="w-3.5 h-3.5 relative z-10 transition-transform duration-300 group-hover:rotate-90 group-hover:drop-shadow-[0_0_6px_rgba(129,140,248,0.9)]" />
-            ) : (
-              <Maximize2 className="w-3.5 h-3.5 relative z-10 transition-transform duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_6px_rgba(129,140,248,0.9)]" />
-            )}
-          </span>
-        </button>
+        {/* Top-Right Action Controls (Skip to Analysis, Collapse, Fullscreen) */}
+        <div className="absolute top-2.5 right-3 sm:right-4 flex items-center gap-1.5 z-30">
+          {onSkipToAnalysis && (
+            <button
+              onClick={onSkipToAnalysis}
+              title="Skip to Live Financial Analysis Workbench"
+              className="px-2.5 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
+            >
+              <span className="hidden sm:inline">Skip to Analysis</span>
+              <span className="sm:hidden">Skip</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {onToggleCollapse && (
+            <button
+              onClick={onToggleCollapse}
+              title="Collapse 3D Video Briefing"
+              className="px-2.5 py-1 rounded-lg bg-[#27272a] hover:bg-[#3f3f46] text-[#d4d4d8] hover:text-white border border-[#3f3f46] text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
+            >
+              <span className="hidden sm:inline">Collapse</span>
+              <ChevronUp className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          <button
+            onClick={() => setIsCinemaMode((prev) => !prev)}
+            title={isCinemaMode ? "Exit Fullscreen Demo" : "Expand Fullscreen Demo"}
+            className="group w-7 h-7 rounded-lg bg-[#27272a]/90 hover:bg-[#3f3f46] border border-[#3f3f46]/80 hover:border-indigo-400/80 shadow-md shadow-black/50 hover:shadow-[0_0_14px_rgba(99,102,241,0.65)] text-[#d4d4d8] hover:text-white transition-all duration-300 ease-out cursor-pointer flex items-center justify-center hover:scale-105 active:scale-95"
+            aria-label={isCinemaMode ? "Exit Fullscreen" : "Fullscreen"}
+          >
+            <span className="relative flex items-center justify-center">
+              {/* Subtle glow aura blur behind icon on hover */}
+              <span className="absolute inset-0 rounded-full bg-indigo-500/0 group-hover:bg-indigo-500/30 blur-xs transition-all duration-300 pointer-events-none" />
+              {isCinemaMode ? (
+                <Minimize2 className="w-3.5 h-3.5 relative z-10 transition-transform duration-300 group-hover:rotate-90 group-hover:drop-shadow-[0_0_6px_rgba(129,140,248,0.9)]" />
+              ) : (
+                <Maximize2 className="w-3.5 h-3.5 relative z-10 transition-transform duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_6px_rgba(129,140,248,0.9)]" />
+              )}
+            </span>
+          </button>
+        </div>
 
         {/* Row 1: Live Status Indicator & Current Active Badge (Left) */}
         <div className="flex items-center justify-between w-full h-[30px] gap-2 pr-12">
           {/* Top Left: Status & Active Chapter */}
-          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 flex-wrap">
             <div className="flex items-center gap-2">
               <span className="relative flex h-2.5 w-2.5">
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isPlaying ? 'bg-emerald-400 opacity-75' : 'bg-amber-400 opacity-75'}`} />
@@ -1441,6 +1473,17 @@ export const Interactive3DVideoDemo: React.FC<Interactive3DVideoDemoProps> = ({
             <span className="text-xs font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
               {currentChapter.badge}
             </span>
+
+            {companyName && (
+              <>
+                <span className="text-[#3f3f46] hidden sm:inline">|</span>
+                <span className="text-xs font-mono px-2 py-0.5 rounded bg-[#09090b] text-white border border-[#27272a] hidden sm:inline-flex items-center gap-1.5">
+                  <span className="text-[#71717a]">Target:</span>
+                  <span className="font-semibold text-white">{companyName}</span>
+                  {ticker && <span className="text-indigo-400 font-bold">({ticker})</span>}
+                </span>
+              </>
+            )}
           </div>
         </div>
 
@@ -1493,7 +1536,7 @@ export const Interactive3DVideoDemo: React.FC<Interactive3DVideoDemoProps> = ({
       </div>
 
       {/* 2. Main 3D Canvas Viewport Container */}
-      <div className="relative w-full h-[420px] sm:h-[500px] lg:h-[560px] bg-[#050508] overflow-hidden select-none">
+      <div className="relative w-full h-[380px] sm:h-[450px] lg:h-[490px] bg-[#050508] overflow-hidden select-none">
         
         {/* Three.js Canvas Container */}
         <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />

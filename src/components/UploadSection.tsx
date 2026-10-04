@@ -258,8 +258,11 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
                     <button
                       key={sample.id}
                       id={`btn-sample-${sample.id}`}
+                      data-tilt-card="true"
+                      data-tilt-max="6"
+                      data-tilt-scale="1.02"
                       onClick={() => !isSampleLocked ? onSelectDataset(sample) : onOpenRoleMatrix?.()}
-                      className={`text-left p-2.5 rounded-xl border text-xs transition-all flex flex-col justify-between ${
+                      className={`relative text-left p-2.5 rounded-xl border text-xs transition-all flex flex-col justify-between ${
                         isSelected
                           ? 'bg-[#18181b] border-indigo-500/60 ring-1 ring-indigo-500/30 text-[#fafafa] shadow-sm'
                           : 'bg-[#18181b]/70 border-[#27272a] hover:bg-[#18181b] text-[#a1a1aa] hover:border-[#3f3f46]'
@@ -287,11 +290,14 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
           <div className={isDemoMode ? "lg:col-span-4" : "w-full"}>
             {canUpload ? (
               <div
+                data-tilt-card="true"
+                data-tilt-max="5"
+                data-tilt-scale="1.012"
                 onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`p-2.5 rounded-xl border border-dashed flex items-center justify-between gap-2.5 cursor-pointer transition-all ${
+                className={`relative p-2.5 rounded-xl border border-dashed flex items-center justify-between gap-2.5 cursor-pointer transition-all ${
                   isDragging
                     ? 'border-indigo-400 bg-indigo-500/10 text-indigo-200'
                     : 'border-[#3f3f46] hover:border-[#71717a] bg-[#18181b] hover:bg-[#1c1c20] text-[#a1a1aa]'

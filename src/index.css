@@ -119,6 +119,22 @@
   box-sizing: border-box;
 }
 
+/* Continuous financial stream ticker animation */
+@keyframes ticker-slide {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-ticker {
+  display: flex;
+  width: max-content;
+  animation: ticker-slide 24s linear infinite;
+}
+
+.animate-ticker:hover {
+  animation-play-state: paused;
+}
+
 .table-responsive-wrapper {
   width: 100%;
   max-width: 100%;

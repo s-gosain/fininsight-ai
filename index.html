@@ -4,65 +4,78 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script>
-      // Clean console: silence benign dev environment, WebGL warnings, ResizeObserver notifications, and telemetry
+      // Clean console: eliminate browser logs, dev server telemetry, Three.js notices, and React DevTools prompts
       (function() {
-        const noop = function() {};
-        ['log', 'info', 'warn', 'debug', 'clear', 'dir', 'table', 'trace', 'count', 'time', 'timeEnd', 'group', 'groupCollapsed', 'groupEnd'].forEach(function(m) {
+        var noop = function() {};
+
+        // Disable all standard log, info, warn, debug, clear methods to avoid spurious DevTools counter badges
+        ['log', 'info', 'warn', 'debug', 'dir', 'table', 'trace', 'count', 'time', 'timeEnd', 'group', 'groupCollapsed', 'groupEnd', 'clear'].forEach(function(m) {
           try {
             console[m] = noop;
             Object.defineProperty(console, m, {
-              value: noop,
-              writable: true,
+              get: function() { return noop; },
+              set: function() {},
               configurable: true
             });
           } catch(e) {}
         });
 
-        const _origError = console.error;
-        console.error = function(...args) {
-          const str = (args[0] && typeof args[0] === 'string') ? args[0] : (args[0]?.message || '');
-          if (
-            str.includes('WebSocket') ||
-            str.includes('websocket') ||
-            str.includes('failed to connect to websocket') ||
-            str.includes('[vite]') ||
-            str.includes('ResizeObserver') ||
-            str.includes('WebGL') ||
-            str.includes('CONTEXT_LOST_WEBGL') ||
-            str.includes('context lost') ||
-            str.includes('THREE.') ||
-            str.includes('test/connection') ||
-            str.includes('connection/test') ||
-            str.includes('Missing or insufficient permissions') ||
-            str.includes('Download the React DevTools')
-          ) {
-            return;
-          }
-          return _origError.apply(console, args);
-        };
+        var _origError = (typeof console !== 'undefined' && console.error) ? console.error.bind(console) : noop;
+        try {
+          Object.defineProperty(console, 'error', {
+            get: function() {
+              return function() {
+                var str = '';
+                for (var i = 0; i < arguments.length; i++) {
+                  var a = arguments[i];
+                  str += ' ' + (typeof a === 'string' ? a : (a && a.message ? a.message : ''));
+                }
+                if (
+                  str.indexOf('WebSocket') !== -1 ||
+                  str.indexOf('websocket') !== -1 ||
+                  str.indexOf('failed to connect') !== -1 ||
+                  str.indexOf('[vite]') !== -1 ||
+                  str.indexOf('ResizeObserver') !== -1 ||
+                  str.indexOf('WebGL') !== -1 ||
+                  str.indexOf('CONTEXT_LOST_WEBGL') !== -1 ||
+                  str.indexOf('context lost') !== -1 ||
+                  str.indexOf('THREE.') !== -1 ||
+                  str.indexOf('test/connection') !== -1 ||
+                  str.indexOf('Missing or insufficient permissions') !== -1 ||
+                  str.indexOf('Download the React DevTools') !== -1
+                ) {
+                  return;
+                }
+                _origError.apply(console, arguments);
+              };
+            },
+            set: function() {},
+            configurable: true
+          });
+        } catch(e) {}
 
         window.onerror = function(message) {
-          const msg = String(message || '');
+          var msg = String(message || '');
           if (
-            msg.includes('ResizeObserver') ||
-            msg.includes('WebSocket') ||
-            msg.includes('websocket') ||
-            msg.includes('WebGL') ||
-            msg.includes('CONTEXT_LOST_WEBGL') ||
-            msg.includes('context lost')
+            msg.indexOf('ResizeObserver') !== -1 ||
+            msg.indexOf('WebSocket') !== -1 ||
+            msg.indexOf('websocket') !== -1 ||
+            msg.indexOf('WebGL') !== -1 ||
+            msg.indexOf('CONTEXT_LOST_WEBGL') !== -1 ||
+            msg.indexOf('context lost') !== -1
           ) {
             return true;
           }
         };
 
         window.addEventListener('unhandledrejection', function(event) {
-          const msg = event.reason?.message || String(event.reason || '');
+          var msg = event.reason && event.reason.message ? event.reason.message : String(event.reason || '');
           if (
-            msg.includes('WebSocket') ||
-            msg.includes('websocket') ||
-            msg.includes('failed to connect') ||
-            msg.includes('ResizeObserver') ||
-            msg.includes('WebGL')
+            msg.indexOf('WebSocket') !== -1 ||
+            msg.indexOf('websocket') !== -1 ||
+            msg.indexOf('failed to connect') !== -1 ||
+            msg.indexOf('ResizeObserver') !== -1 ||
+            msg.indexOf('WebGL') !== -1
           ) {
             event.preventDefault();
             event.stopImmediatePropagation();
@@ -70,15 +83,15 @@
         });
 
         window.addEventListener('error', function(event) {
-          const msg = event.message || '';
+          var msg = event.message || '';
           if (
-            msg.includes('WebSocket') ||
-            msg.includes('websocket') ||
-            msg.includes('failed to connect') ||
-            msg.includes('ResizeObserver') ||
-            msg.includes('WebGL') ||
-            msg.includes('CONTEXT_LOST_WEBGL') ||
-            msg.includes('context lost')
+            msg.indexOf('WebSocket') !== -1 ||
+            msg.indexOf('websocket') !== -1 ||
+            msg.indexOf('failed to connect') !== -1 ||
+            msg.indexOf('ResizeObserver') !== -1 ||
+            msg.indexOf('WebGL') !== -1 ||
+            msg.indexOf('CONTEXT_LOST_WEBGL') !== -1 ||
+            msg.indexOf('context lost') !== -1
           ) {
             event.preventDefault();
             event.stopImmediatePropagation();

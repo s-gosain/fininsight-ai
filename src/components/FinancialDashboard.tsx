@@ -583,8 +583,11 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
         {/* AI Deep Brief & Key Insights (5 cols) */}
         <motion.div
           {...dashboardCardHoverProps}
+          data-tilt-card="true"
+          data-tilt-max="5"
+          data-tilt-scale="1.012"
           id="ai-executive-brief-card"
-          className={`lg:col-span-5 bg-[#18181b] border border-[#27272a] hover:border-indigo-500/40 rounded-xl p-5 shadow-sm flex flex-col justify-between transition-colors ${
+          className={`relative lg:col-span-5 bg-[#18181b] border border-[#27272a] hover:border-indigo-500/40 rounded-xl p-5 shadow-sm flex flex-col justify-between transition-colors ${
             collapsedCards['ai_brief_card'] ? 'h-auto' : 'h-full min-h-[380px]'
           }`}
         >
@@ -727,8 +730,11 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
       <motion.div
         variants={dashboardGridItemVariants}
         whileHover="hover"
+        data-tilt-card="true"
+        data-tilt-max="3"
+        data-tilt-scale="1.006"
         id="growth-momentum-heatmap-card"
-        className="bg-[#18181b] border border-[#27272a] hover:border-indigo-500/30 rounded-xl p-5 shadow-sm space-y-4 transition-colors"
+        className="relative bg-[#18181b] border border-[#27272a] hover:border-indigo-500/30 rounded-xl p-5 shadow-sm space-y-4 transition-colors"
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#27272a] pb-3">
           <div className="flex items-center gap-2.5">
@@ -931,7 +937,7 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
       <motion.div variants={dashboardGridItemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         
         {/* Chart 1: Multi-Period Revenue & Profitability Trajectory */}
-        <motion.div {...dashboardCardHoverProps} id="chart-card-revenue-profit" className="bg-[#18181b] border border-[#27272a] hover:border-indigo-500/30 rounded-xl p-5 shadow-sm transition-colors">
+        <motion.div {...dashboardCardHoverProps} data-tilt-card="true" data-tilt-max="4.5" data-tilt-scale="1.012" id="chart-card-revenue-profit" className="relative bg-[#18181b] border border-[#27272a] hover:border-indigo-500/30 rounded-xl p-5 shadow-sm transition-colors">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <BarChart2 className="w-4 h-4 text-indigo-400" />
@@ -1001,7 +1007,7 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
         </motion.div>
 
         {/* Chart 2: Margin Expansion & Compression Trajectory */}
-        <motion.div {...dashboardCardHoverProps} id="chart-card-margin-trends" className="bg-[#18181b] border border-[#27272a] hover:border-indigo-500/30 rounded-xl p-5 shadow-sm transition-colors">
+        <motion.div {...dashboardCardHoverProps} data-tilt-card="true" data-tilt-max="4.5" data-tilt-scale="1.012" id="chart-card-margin-trends" className="relative bg-[#18181b] border border-[#27272a] hover:border-indigo-500/30 rounded-xl p-5 shadow-sm transition-colors">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-indigo-400" />
@@ -1072,7 +1078,7 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
         </motion.div>
 
         {/* Chart 3: Capital Structure & Solvency Breakdown */}
-        <motion.div {...dashboardCardHoverProps} id="chart-card-balance-sheet" className="bg-[#18181b] border border-[#27272a] hover:border-indigo-500/30 rounded-xl p-5 shadow-sm transition-colors">
+        <motion.div {...dashboardCardHoverProps} data-tilt-card="true" data-tilt-max="4.5" data-tilt-scale="1.012" id="chart-card-balance-sheet" className="relative bg-[#18181b] border border-[#27272a] hover:border-indigo-500/30 rounded-xl p-5 shadow-sm transition-colors">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Layers className="w-4 h-4 text-indigo-400" />
@@ -1142,7 +1148,7 @@ export const FinancialDashboard: React.FC<FinancialDashboardProps> = ({
         </motion.div>
 
         {/* Chart 4: Operating Cash Flow vs Free Cash Flow */}
-        <motion.div {...dashboardCardHoverProps} id="chart-card-cash-flow" className="bg-[#18181b] border border-[#27272a] hover:border-indigo-500/30 rounded-xl p-5 shadow-sm transition-colors">
+        <motion.div {...dashboardCardHoverProps} data-tilt-card="true" data-tilt-max="4.5" data-tilt-scale="1.012" id="chart-card-cash-flow" className="relative bg-[#18181b] border border-[#27272a] hover:border-indigo-500/30 rounded-xl p-5 shadow-sm transition-colors">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <DollarSign className="w-4 h-4 text-indigo-400" />

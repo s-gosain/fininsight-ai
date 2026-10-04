@@ -84,10 +84,14 @@ import { auth, signInWithGoogle, logOut } from './lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { dashboardGridContainerVariants, dashboardGridItemVariants } from './utils/animations';
 import { AuthUser, WorkspaceType } from './types';
+import { useGlobalCardTilt } from './utils/useCardTilt';
 
 export type AppViewMode = 'landing' | 'demo' | 'onboarding' | 'app';
 
 export const App: React.FC = () => {
+  // Enable 3D tilt and soft specular shine across application cards
+  useGlobalCardTilt();
+
   // 0. Routing & Auth State
   const [authUser, setAuthUser] = useState<AuthUser | null>(() => {
     try {
@@ -1315,58 +1319,31 @@ export const App: React.FC = () => {
       {appViewMode === 'demo' && (
         <section 
           id="sandbox-3d-video-demo"
-          className="relative z-20 bg-[#09090b] py-6 sm:py-8 px-4 sm:px-6 lg:px-8 overflow-hidden"
+          className="relative z-20 bg-[#09090b] py-5 sm:py-7 overflow-hidden"
         >
           {/* Subtle Ambient Interactive Mesh Glow */}
           <div className="absolute inset-0 bg-radial from-indigo-950/25 via-transparent to-transparent pointer-events-none" />
 
-          <div className="max-w-6xl mx-auto relative z-10">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-5 sm:mb-6">
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-2.5 w-2.5 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
-                </span>
-                <span className="text-xs font-mono font-bold tracking-wider text-indigo-400 uppercase">
-                  Guided 3D Video Walkthrough
-                </span>
-              </div>
-              
-              <div className="flex items-center gap-2 text-xs">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            {!isDemoVideoVisible ? (
+              <div className="flex items-center justify-between p-3 rounded-xl bg-[#141418] border border-[#27272a] text-xs">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                  <span className="font-mono text-indigo-400 font-bold uppercase tracking-wider text-[11px]">
+                    Guided 3D Video Walkthrough (Collapsed)
+                  </span>
+                  <span className="text-[#71717a] hidden sm:inline">• {dataset.companyName} ({dataset.ticker || 'Active'})</span>
+                </div>
                 <button
-                  id="btn-toggle-demo-video"
-                  onClick={() => setIsDemoVideoVisible((prev) => !prev)}
-                  className="px-2.5 py-1 rounded-lg bg-[#18181b] hover:bg-[#27272a] text-[#a1a1aa] hover:text-white border border-[#3f3f46]/40 transition-colors flex items-center gap-1.5 cursor-pointer font-medium"
-                  title={isDemoVideoVisible ? 'Collapse Video Briefing' : 'Expand Video Briefing'}
+                  id="btn-expand-demo-video"
+                  onClick={() => setIsDemoVideoVisible(true)}
+                  className="px-3 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
                 >
-                  {isDemoVideoVisible ? (
-                    <>
-                      <span>Collapse Video</span>
-                      <ChevronUp className="w-3.5 h-3.5" />
-                    </>
-                  ) : (
-                    <>
-                      <span>Expand 3D Video</span>
-                      <ChevronDown className="w-3.5 h-3.5" />
-                    </>
-                  )}
-                </button>
-
-                <button
-                  id="btn-skip-to-analysis"
-                  onClick={() => {
-                    const el = document.getElementById('sandbox-analysis-section') || document.getElementById('tab-navigation-bar');
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="px-3 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 transition-colors flex items-center gap-1.5 cursor-pointer font-medium"
-                >
-                  <span>Skip to Analysis</span>
+                  <span>Expand 3D Video</span>
                   <ChevronDown className="w-3.5 h-3.5" />
                 </button>
               </div>
-            </div>
-
-            {isDemoVideoVisible && (
+            ) : (
               <div className="animate-fade-in">
                 <Interactive3DVideoDemo
                   dataset={dataset}
@@ -1377,6 +1354,11 @@ export const App: React.FC = () => {
                   onToggleTranscriptOverlay={(val) => setIsTranscriptOverlayOpted(val)}
                   onContinueToSignIn={() => setAppViewMode('onboarding')}
                   onVideoComplete={handleDemoVideoComplete}
+                  onToggleCollapse={() => setIsDemoVideoVisible(false)}
+                  onSkipToAnalysis={() => {
+                    const el = document.getElementById('sandbox-analysis-section') || document.getElementById('tab-navigation-bar');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
                   onReplay={() => {
                     if (autoScrollTimerRef.current) clearTimeout(autoScrollTimerRef.current);
                     setIsBridgeTransitionActive(false);

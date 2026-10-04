@@ -79,8 +79,8 @@ app.use((req, res, next) => {
     res.on("finish", () => {
       const duration = Date.now() - start;
       const status = res.statusCode;
-      // Skip high-frequency health checks from dominating logs
-      if (reqPath === "/api/health" && status < 400 && Math.random() > 0.1) {
+      // Skip health check and log polling from cluttering backend logs
+      if (reqPath === "/api/health" || reqPath.startsWith("/api/backend-logs")) {
         return;
       }
       const level: "INFO" | "WARN" | "ERROR" | "SUCCESS" =

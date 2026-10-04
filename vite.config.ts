@@ -3,9 +3,30 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
 
+function silenceConsolePlugin() {
+  return {
+    name: 'silence-console-first',
+    transformIndexHtml: {
+      order: 'pre' as const,
+      handler(html: string) {
+        const script = `<script>
+(function(){
+  var n=function(){};
+  var c=window.console||{};
+  ['log','info','warn','debug','dir','table','trace','count','time','timeEnd','group','groupCollapsed','groupEnd','clear'].forEach(function(m){
+    try{c[m]=n;Object.defineProperty(c,m,{value:n,writable:true,configurable:true});}catch(e){}
+  });
+})();
+</script>`;
+        return html.replace('<head>', `<head>${script}`);
+      },
+    },
+  };
+}
+
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [silenceConsolePlugin(), react(), tailwindcss()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
