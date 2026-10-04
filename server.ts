@@ -744,20 +744,26 @@ app.post("/api/ai/chat", async (req, res) => {
       });
     }
 
-    const chatPrompt = `You are an elite Senior Financial Advisor and CPA assisting with financial statement questions.
-Current Company Context: ${companyName || "Target Company"}
-Financial Statement Snapshot:
+    const chatPrompt = `You are an elite Senior Financial Analyst and CPA assisting with corporate financial statement analysis for ${companyName || "Target Company"}.
+Active Period: ${financialContext?.activePeriod || "Current"}
+Reporting Currency: ${financialContext?.reportingCurrency || "USD"}
+
+Financial Statement Snapshot Data:
 ${JSON.stringify(financialContext, null, 2)}
 
 User Question: ${userQuery}
 
-Provide a concise, highly analytical, and fact-grounded response citing specific dollar amounts, percentages, and financial metrics when available. Format with clean markdown styling.`;
+CRITICAL INSTRUCTIONS:
+1. Examine the provided Financial Statement Snapshot above carefully. The numbers, line items, and periods are already provided in the JSON snapshot. Compute the requested metrics, ratios, and percentages directly from these numbers. Never ask the user to input numbers that are already in the snapshot.
+2. If computing a ratio (e.g., Operating Margin = Operating Income / Revenue, or Gross Margin = Gross Profit / Revenue, Debt-to-Equity, Current Ratio), show the exact numbers used from the snapshot, the formula, the computed percentage, and year-over-year comparison across periods.
+3. Provide crisp, institutional-grade analytical commentary explaining the business implications (cost pressures, margin expansion/compression, working capital trends).
+4. Use clean Markdown formatting with clear bold text, bullet points, and brief tables where helpful. Avoid LaTeX dollar delimiters ($$) to keep presentation clean.`;
 
     const { response } = await callGeminiWithResilience(ai, {
       model: "gemini-3.1-flash-lite",
       contents: chatPrompt,
       config: {
-        systemInstruction: "You are an expert Wall Street financial analyst and CPA. Ground all answers strictly in the financial statement data.",
+        systemInstruction: "You are an expert Wall Street financial analyst and CPA. Ground all answers strictly in the financial statement data provided.",
       },
     });
 

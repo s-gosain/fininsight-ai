@@ -8,17 +8,50 @@ function silenceConsolePlugin() {
     name: 'silence-console-first',
     transformIndexHtml: {
       order: 'pre' as const,
-      handler(html: string) {
-        const script = `<script>
-(function(){
-  var n=function(){};
-  var c=window.console||{};
-  ['log','info','warn','debug','dir','table','trace','count','time','timeEnd','group','groupCollapsed','groupEnd','clear'].forEach(function(m){
-    try{c[m]=n;Object.defineProperty(c,m,{value:n,writable:true,configurable:true});}catch(e){}
+      handler() {
+        return [
+          {
+            tag: 'script',
+            attrs: { type: 'text/javascript' },
+            children: `(function(){
+  var noop = function(){};
+  var c = window.console;
+  if (!c) return;
+  var _nativeClear = typeof c.clear === 'function' ? c.clear.bind(c) : noop;
+  ['log','info','warn','debug','dir','table','trace','count','time','timeEnd','group','groupCollapsed','groupEnd'].forEach(function(m){
+    try {
+      Object.defineProperty(c, m, {
+        get: function(){ return noop; },
+        set: function(){},
+        configurable: false
+      });
+    } catch(e) {
+      try { c[m] = noop; } catch(_) {}
+    }
   });
-})();
-</script>`;
-        return html.replace('<head>', `<head>${script}`);
+  try {
+    Object.defineProperty(c, 'clear', {
+      get: function(){ return _nativeClear; },
+      set: function(){},
+      configurable: false
+    });
+  } catch(e) {}
+  try { _nativeClear(); } catch(e) {}
+  if (typeof window !== 'undefined') {
+    window.addEventListener('load', function() {
+      try { _nativeClear(); } catch(e) {}
+    });
+    setTimeout(function() {
+      try { _nativeClear(); } catch(e) {}
+    }, 150);
+    setTimeout(function() {
+      try { _nativeClear(); } catch(e) {}
+    }, 600);
+  }
+})();`,
+            injectTo: 'head-prepend' as const,
+          },
+        ];
       },
     },
   };

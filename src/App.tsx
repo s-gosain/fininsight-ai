@@ -1646,6 +1646,7 @@ export const App: React.FC = () => {
                     tabId={activeTab}
                     currentRole={userRole}
                     userOrg={authUser?.organization}
+                    onSwitchRole={(role) => setUserRole(role)}
                     onNavigateTab={(tab) => {
                       setActiveTab(tab);
                     }}

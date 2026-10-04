@@ -79,11 +79,16 @@ if (typeof window !== 'undefined') {
   };
 
   // Silence console methods to ensure zero spurious logs in browser DevTools
-  console.log = () => {};
-  console.info = () => {};
-  console.debug = () => {};
-  console.warn = () => {};
-  console.clear = () => {};
+  try {
+    const noop = () => {};
+    console.log = noop;
+    console.info = noop;
+    console.debug = noop;
+    console.warn = noop;
+    if (typeof console.clear === 'function') {
+      console.clear();
+    }
+  } catch (_) {}
 
   const originalConsoleError = console.error;
   console.error = (...args: any[]) => {
@@ -95,6 +100,15 @@ if (typeof window !== 'undefined') {
     }
     originalConsoleError.apply(console, args);
   };
+
+  // Schedule background clear after full mount to guarantee pristine 0-badge console state
+  if (typeof window !== 'undefined') {
+    setTimeout(() => {
+      try {
+        if (typeof console.clear === 'function') console.clear();
+      } catch (_) {}
+    }, 200);
+  }
 }
 
 createRoot(document.getElementById('root')!).render(

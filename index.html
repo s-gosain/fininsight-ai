@@ -7,18 +7,29 @@
       // Clean console: eliminate browser logs, dev server telemetry, Three.js notices, and React DevTools prompts
       (function() {
         var noop = function() {};
+        var _origClear = (typeof console !== 'undefined' && typeof console.clear === 'function') ? console.clear.bind(console) : noop;
 
-        // Disable all standard log, info, warn, debug, clear methods to avoid spurious DevTools counter badges
-        ['log', 'info', 'warn', 'debug', 'dir', 'table', 'trace', 'count', 'time', 'timeEnd', 'group', 'groupCollapsed', 'groupEnd', 'clear'].forEach(function(m) {
+        // Disable all standard log, info, warn, debug methods to avoid spurious DevTools counter badges
+        ['log', 'info', 'warn', 'debug', 'dir', 'table', 'trace', 'count', 'time', 'timeEnd', 'group', 'groupCollapsed', 'groupEnd'].forEach(function(m) {
           try {
-            console[m] = noop;
             Object.defineProperty(console, m, {
               get: function() { return noop; },
               set: function() {},
-              configurable: true
+              configurable: false
             });
-          } catch(e) {}
+          } catch(e) {
+            try { console[m] = noop; } catch(_) {}
+          }
         });
+
+        try {
+          Object.defineProperty(console, 'clear', {
+            get: function() { return _origClear; },
+            set: function() {},
+            configurable: false
+          });
+        } catch(e) {}
+        try { _origClear(); } catch(e) {}
 
         var _origError = (typeof console !== 'undefined' && console.error) ? console.error.bind(console) : noop;
         try {
@@ -50,7 +61,7 @@
               };
             },
             set: function() {},
-            configurable: true
+            configurable: false
           });
         } catch(e) {}
 
