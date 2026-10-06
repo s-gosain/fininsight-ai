@@ -52,12 +52,12 @@ function FormattedMessage({ text }: { text: string }) {
         const headerRow = rows[0];
         const dataRows = rows.slice(rows.length > 1 && rows[1].every((c) => /^:?-+:?$/.test(c)) ? 2 : 1);
         result.push(
-          <div key={`table-${keyPrefix}`} className="my-2.5 overflow-x-auto rounded-lg border border-[#27272a] bg-[#09090b]">
-            <table className="w-full text-left text-xs border-collapse">
+          <div key={`table-${keyPrefix}`} className="my-2 overflow-x-auto rounded-lg border border-[#27272a] bg-[#09090b]">
+            <table className="w-full text-left text-[10.5px] border-collapse">
               <thead>
                 <tr className="border-b border-[#27272a] bg-[#18181b]/80">
                   {headerRow.map((cell, idx) => (
-                    <th key={idx} className="p-2 font-mono font-semibold text-indigo-300">
+                    <th key={idx} className="py-1.5 px-2 font-mono font-medium text-[10px] text-indigo-300">
                       {formatInline(cell)}
                     </th>
                   ))}
@@ -67,7 +67,7 @@ function FormattedMessage({ text }: { text: string }) {
                 {dataRows.map((r, rIdx) => (
                   <tr key={rIdx} className="hover:bg-white/[0.02]">
                     {r.map((c, cIdx) => (
-                      <td key={cIdx} className="p-2 font-mono text-[#d4d4d8]">
+                      <td key={cIdx} className="py-1.5 px-2 font-mono text-[10.5px] text-[#d4d4d8]">
                         {formatInline(c)}
                       </td>
                     ))}
@@ -85,9 +85,9 @@ function FormattedMessage({ text }: { text: string }) {
     const flushList = (keyPrefix: number) => {
       if (listItems.length === 0) return;
       result.push(
-        <ul key={`list-${keyPrefix}`} className="my-1.5 space-y-1 pl-4 list-disc marker:text-indigo-400">
+        <ul key={`list-${keyPrefix}`} className="my-1 space-y-0.5 pl-4 list-disc marker:text-indigo-400">
           {listItems.map((item, idx) => (
-            <li key={idx} className="text-[#fafafa] leading-relaxed">
+            <li key={idx} className="text-[#f4f4f5] leading-relaxed text-[11px]">
               {formatInline(item)}
             </li>
           ))}
@@ -110,7 +110,7 @@ function FormattedMessage({ text }: { text: string }) {
         }
         if (part.startsWith('`') && part.endsWith('`')) {
           return (
-            <code key={pIdx} className="px-1.5 py-0.5 rounded bg-[#27272a] text-indigo-300 font-mono text-[11px]">
+            <code key={pIdx} className="px-1.5 py-0.5 rounded bg-[#27272a] text-indigo-300 font-mono text-[10px]">
               {part.slice(1, -1)}
             </code>
           );
@@ -157,7 +157,7 @@ function FormattedMessage({ text }: { text: string }) {
       // Headers
       if (trimmed.startsWith('### ')) {
         result.push(
-          <h4 key={`h4-${lineIdx}`} className="text-xs font-bold text-white mt-2.5 mb-1 tracking-wide uppercase font-mono text-indigo-300">
+          <h4 key={`h4-${lineIdx}`} className="text-[11px] font-semibold text-indigo-300 mt-2 mb-0.5 tracking-wider uppercase font-mono">
             {formatInline(trimmed.slice(4))}
           </h4>
         );
@@ -165,7 +165,7 @@ function FormattedMessage({ text }: { text: string }) {
       }
       if (trimmed.startsWith('## ')) {
         result.push(
-          <h3 key={`h3-${lineIdx}`} className="text-sm font-bold text-white mt-3 mb-1.5 tracking-tight">
+          <h3 key={`h3-${lineIdx}`} className="text-[12px] font-semibold text-white mt-2 mb-1 tracking-tight">
             {formatInline(trimmed.slice(3))}
           </h3>
         );
@@ -174,19 +174,19 @@ function FormattedMessage({ text }: { text: string }) {
 
       // Horizontal rule
       if (trimmed === '---' || trimmed === '***') {
-        result.push(<hr key={`hr-${lineIdx}`} className="my-2 border-[#27272a]" />);
+        result.push(<hr key={`hr-${lineIdx}`} className="my-1.5 border-[#27272a]" />);
         return;
       }
 
       // Empty line
       if (!trimmed) {
-        result.push(<div key={`empty-${lineIdx}`} className="h-1.5" />);
+        result.push(<div key={`empty-${lineIdx}`} className="h-1" />);
         return;
       }
 
       // Standard paragraph
       result.push(
-        <p key={`p-${lineIdx}`} className="leading-relaxed text-[#fafafa] my-1">
+        <p key={`p-${lineIdx}`} className="leading-relaxed text-[#e4e4e7] my-0.5 text-[11px]">
           {formatInline(trimmed)}
         </p>
       );
@@ -198,7 +198,7 @@ function FormattedMessage({ text }: { text: string }) {
     return result;
   }, [text]);
 
-  return <div className="space-y-0.5 text-xs">{blocks}</div>;
+  return <div className="space-y-0.5 text-[11px]">{blocks}</div>;
 }
 
 export const FinancialChat: React.FC<FinancialChatProps> = ({
@@ -358,22 +358,22 @@ export const FinancialChat: React.FC<FinancialChatProps> = ({
       <div className={`relative z-10 w-full ${isExpanded ? 'sm:w-[700px] lg:w-[820px]' : 'sm:w-[480px]'} max-w-full bg-[#09090b] border-l border-[#27272a] shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-200 transition-all`}>
         
         {/* Drawer Header */}
-        <div className="px-3.5 py-2.5 sm:px-4 sm:py-3 border-b border-[#27272a] bg-[#18181b] flex items-center justify-between shrink-0">
+        <div className="px-3.5 py-2 sm:px-4 sm:py-2.5 border-b border-[#27272a] bg-[#18181b] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0 shadow-xs">
-              <Sparkles className="w-3.5 h-3.5" />
+            <div className="w-6 h-6 rounded-md bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0 shadow-xs">
+              <Sparkles className="w-3 h-3" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-xs sm:text-sm font-semibold text-white">
+              <div className="flex items-center gap-1.5">
+                <h3 className="text-xs font-semibold text-white">
                   Financial AI Assistant
                 </h3>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono border border-emerald-500/30 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="text-[8.5px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono border border-emerald-500/30 flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse"></span>
                   Active
                 </span>
               </div>
-              <p className="text-[10px] text-[#71717a] font-mono truncate max-w-[200px] sm:max-w-none">
+              <p className="text-[9.5px] text-[#71717a] font-mono truncate max-w-[200px] sm:max-w-none">
                 {dataset.companyName} • {dataset.activePeriod} • {dataset.reportingCurrency}
               </p>
             </div>
@@ -405,7 +405,7 @@ export const FinancialChat: React.FC<FinancialChatProps> = ({
         </div>
 
         {/* Message History */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-3.5 space-y-3 text-xs">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-3.5 space-y-2.5 text-[11px]">
           {messages.map((msg) => {
             const isAI = msg.role === 'assistant';
             return (
@@ -434,7 +434,7 @@ export const FinancialChat: React.FC<FinancialChatProps> = ({
                     {isAI ? (
                       <FormattedMessage text={msg.content} />
                     ) : (
-                      <p className="whitespace-pre-wrap text-xs">{msg.content}</p>
+                      <p className="whitespace-pre-wrap text-[11px] leading-normal">{msg.content}</p>
                     )}
 
                     {/* Copy Button for Assistant responses */}
@@ -455,7 +455,7 @@ export const FinancialChat: React.FC<FinancialChatProps> = ({
 
                   {/* Citations if available */}
                   {msg.citations && msg.citations.length > 0 && (
-                    <div className="flex items-center gap-1 flex-wrap text-[9px] text-[#71717a] pl-0.5 font-mono">
+                    <div className="flex items-center gap-1 flex-wrap text-[8.5px] text-[#71717a] pl-0.5 font-mono">
                       <FileCheck className="w-2.5 h-2.5 text-indigo-400" />
                       <span>Citations: </span>
                       {msg.citations.map((c, idx) => (
@@ -469,7 +469,7 @@ export const FinancialChat: React.FC<FinancialChatProps> = ({
                   {/* Suggested followups */}
                   {msg.suggestedFollowUps && (
                     <div className="pt-1.5 space-y-1">
-                      <span className="text-[9px] font-semibold text-[#a1a1aa] block uppercase tracking-wider font-mono">
+                      <span className="text-[8.5px] font-semibold text-[#a1a1aa] block uppercase tracking-wider font-mono">
                         Recommended Deep-Dives:
                       </span>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
@@ -477,17 +477,17 @@ export const FinancialChat: React.FC<FinancialChatProps> = ({
                           <button
                             key={idx}
                             onClick={() => handleSendMessage(prompt)}
-                            className="text-left px-2.5 py-1.5 rounded-lg bg-[#18181b] hover:bg-[#27272a] hover:border-indigo-500/50 border border-[#27272a] text-[11px] text-[#fafafa] flex items-center justify-between transition-all cursor-pointer group shadow-2xs"
+                            className="text-left px-2.5 py-1.5 rounded-lg bg-[#18181b] hover:bg-[#27272a] hover:border-indigo-500/50 border border-[#27272a] text-[10px] leading-snug text-[#fafafa] flex items-center justify-between transition-all cursor-pointer group shadow-2xs"
                           >
                             <span className="truncate group-hover:text-indigo-300 font-medium">{prompt}</span>
-                            <ArrowRight className="w-3 h-3 shrink-0 ml-1 text-indigo-400 group-hover:translate-x-0.5 transition-transform" />
+                            <ArrowRight className="w-2.5 h-2.5 shrink-0 ml-1 text-indigo-400 group-hover:translate-x-0.5 transition-transform" />
                           </button>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  <span className="text-[9px] text-[#71717a] block px-0.5 font-mono">{msg.timestamp}</span>
+                  <span className="text-[8.5px] text-[#71717a] block px-0.5 font-mono">{msg.timestamp}</span>
                 </div>
               </div>
             );
@@ -498,8 +498,8 @@ export const FinancialChat: React.FC<FinancialChatProps> = ({
               <div className="w-6 h-6 rounded-md bg-[#18181b] border border-[#27272a] flex items-center justify-center text-indigo-400">
                 <Bot className="w-3 h-3 animate-spin" />
               </div>
-              <div className="p-2 px-3 rounded-lg bg-[#18181b] border border-[#27272a] text-[11px] text-indigo-300 flex items-center gap-2 shadow-xs">
-                <RefreshCw className="w-3 h-3 animate-spin" />
+              <div className="p-2 px-3 rounded-lg bg-[#18181b] border border-[#27272a] text-[10.5px] text-indigo-300 flex items-center gap-2 shadow-xs">
+                <RefreshCw className="w-2.5 h-2.5 animate-spin" />
                 <span>Computing econometric analysis...</span>
               </div>
             </div>
@@ -517,7 +517,7 @@ export const FinancialChat: React.FC<FinancialChatProps> = ({
                 key={idx}
                 onClick={() => handleSendMessage(chip.query)}
                 disabled={isLoading}
-                className="px-2 py-1 rounded-full bg-[#18181b] hover:bg-indigo-600/20 text-[#a1a1aa] hover:text-indigo-300 border border-[#27272a] hover:border-indigo-500/40 text-[10px] font-mono whitespace-nowrap flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                className="px-2 py-0.5 rounded-full bg-[#18181b] hover:bg-indigo-600/20 text-[#a1a1aa] hover:text-indigo-300 border border-[#27272a] hover:border-indigo-500/40 text-[9.5px] font-mono whitespace-nowrap flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
               >
                 <Icon className="w-2.5 h-2.5 text-indigo-400" />
                 <span>{chip.label}</span>
@@ -551,7 +551,7 @@ export const FinancialChat: React.FC<FinancialChatProps> = ({
               }}
               autoComplete="off"
               aria-label="Ask AI about financial statements, margins, debt, and trends"
-              className="flex-1 max-h-20 px-3 py-2 rounded-lg bg-[#09090b] border border-[#27272a] text-xs text-white placeholder-[#71717a] focus:outline-none focus:border-indigo-500 transition-colors resize-none leading-normal"
+              className="flex-1 max-h-20 px-2.5 py-1.5 rounded-lg bg-[#09090b] border border-[#27272a] text-[11px] text-white placeholder-[#71717a] placeholder:text-[11px] focus:outline-none focus:border-indigo-500 transition-colors resize-none leading-normal"
             />
             <button
               type="submit"
@@ -562,7 +562,7 @@ export const FinancialChat: React.FC<FinancialChatProps> = ({
               <Send className="w-3.5 h-3.5" />
             </button>
           </form>
-          <div className="flex items-center justify-between text-[9px] text-[#71717a] font-mono mt-1 px-0.5">
+          <div className="flex items-center justify-between text-[8.5px] text-[#71717a] font-mono mt-1 px-0.5">
             <span>Press <kbd className="px-1 py-0.5 rounded bg-[#27272a] text-[#a1a1aa]">Enter</kbd> to send</span>
             <span>Grounded in active statement data</span>
           </div>
