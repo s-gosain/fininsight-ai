@@ -32,7 +32,6 @@
     "react-window": "^2.3.1",
     "recharts": "^3.10.1",
     "three": "^0.185.1",
-    "vite": "^6.2.3",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
