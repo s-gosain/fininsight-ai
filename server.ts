@@ -1,13 +1,12 @@
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const app = express();
-const PORT = 3000;
+export const app = express();
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.use(express.json({ limit: "50mb" }));
 
@@ -1243,6 +1242,7 @@ app.get("/api/sec-edgar/search", async (req, res) => {
 // Vite middleware / static files setup
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       logLevel: "warn",
       server: { 
@@ -1265,4 +1265,10 @@ async function startServer() {
   });
 }
 
-startServer();
+// In local dev and standard Node container runtimes, start server.
+// When deployed on Vercel as a Serverless Function, Vercel invokes app directly.
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export default app;

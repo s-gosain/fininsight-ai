@@ -15,9 +15,11 @@ import {
   AlertTriangle,
   Scale,
   DollarSign,
-  Maximize2
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { ChatMessage, FinancialDataset } from '../types';
+import { generateClientFinancialAnalysis } from '../utils/financialAiClient';
 
 interface FinancialChatProps {
   isOpen: boolean;
@@ -205,17 +207,19 @@ export const FinancialChat: React.FC<FinancialChatProps> = ({
   dataset,
   initialQuery,
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const getInitialMessage = useCallback((): ChatMessage => {
     return {
       id: `msg-init-${dataset.companyName}`,
       role: 'assistant',
-      content: `Hello! I am your AI Financial Statement Analyst with complete context on **${dataset.companyName}** (${dataset.periods.join(', ')}). \n\nI can compute profitability margins, deconstruct DuPont ROE drivers, analyze debt coverage covenants, audit budget variances, or assess solvency risks based on live financial statements.`,
+      content: `Hello! I am your AI Financial Analyst with live context on **${dataset.companyName}** (${dataset.periods.join(', ')}).\n\nAsk me to analyze profitability margins, DuPont ROE drivers, debt covenants, budget variances, or solvency risks.`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       suggestedFollowUps: [
-        'Analyze FY24 Revenue and Gross Profit Margin',
-        'Assess Debt-to-Equity and interest coverage ratios',
-        'Summarize top red flags for the Audit Committee',
-        'What is our Free Cash Flow trajectory and cash burn?',
+        'Analyze FY24 Revenue & Gross Margin',
+        'Assess Debt-to-Equity & interest coverage',
+        'Summarize top red flags for Audit Committee',
+        'What is our Free Cash Flow trajectory?',
       ],
     };
   }, [dataset.companyName, dataset.periods]);
@@ -300,13 +304,19 @@ export const FinancialChat: React.FC<FinancialChatProps> = ({
 
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (err: any) {
+      // Automatic client-side financial analytics fallback:
+      // Computes margins, covenants, cash flow, and red flags directly from the statement dataset
+      // so users on Vercel static deployments or cold-starting instances never get stranded!
+      const clientFallback = generateClientFinancialAnalysis(dataset, textToSend);
+
       setMessages((prev) => [
         ...prev,
         {
-          id: `ai-err-${Date.now()}`,
+          id: `ai-local-${Date.now()}`,
           role: 'assistant',
-          content: 'Unable to reach the financial analysis engine. Please verify the backend service connection and try again.',
+          content: clientFallback.reply,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          citations: clientFallback.citations,
         },
       ]);
     } finally {
@@ -345,25 +355,25 @@ export const FinancialChat: React.FC<FinancialChatProps> = ({
       />
 
       {/* Drawer */}
-      <div className="relative z-10 w-full sm:w-[500px] max-w-full bg-[#09090b] border-l border-[#27272a] shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-200">
+      <div className={`relative z-10 w-full ${isExpanded ? 'sm:w-[700px] lg:w-[820px]' : 'sm:w-[480px]'} max-w-full bg-[#09090b] border-l border-[#27272a] shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-200 transition-all`}>
         
         {/* Drawer Header */}
-        <div className="p-3.5 sm:p-4 border-b border-[#27272a] bg-[#18181b] flex items-center justify-between shrink-0">
+        <div className="px-3.5 py-2.5 sm:px-4 sm:py-3 border-b border-[#27272a] bg-[#18181b] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0 shadow-xs">
-              <Sparkles className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0 shadow-xs">
+              <Sparkles className="w-3.5 h-3.5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-white">
+                <h3 className="text-xs sm:text-sm font-semibold text-white">
                   Financial AI Assistant
                 </h3>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono border border-emerald-500/30 flex items-center gap-1">
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono border border-emerald-500/30 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                   Active
                 </span>
               </div>
-              <p className="text-[11px] text-[#71717a] font-mono truncate max-w-[240px] sm:max-w-none">
+              <p className="text-[10px] text-[#71717a] font-mono truncate max-w-[200px] sm:max-w-none">
                 {dataset.companyName} • {dataset.activePeriod} • {dataset.reportingCurrency}
               </p>
             </div>
@@ -371,53 +381,60 @@ export const FinancialChat: React.FC<FinancialChatProps> = ({
 
           <div className="flex items-center gap-1">
             <button
+              onClick={() => setIsExpanded((prev) => !prev)}
+              title={isExpanded ? "Standard width" : "Expand width"}
+              className="p-1.5 rounded-md text-[#71717a] hover:text-white hover:bg-[#27272a] transition-colors cursor-pointer"
+            >
+              {isExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+            </button>
+            <button
               onClick={handleResetChat}
               title="Reset conversation"
               className="p-1.5 rounded-md text-[#71717a] hover:text-white hover:bg-[#27272a] transition-colors cursor-pointer"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={onClose}
               title="Close chat"
               className="p-1.5 rounded-md text-[#71717a] hover:text-white hover:bg-[#27272a] transition-colors cursor-pointer"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
         {/* Message History */}
-        <div className="flex-1 overflow-y-auto p-3.5 sm:p-4 space-y-4 text-xs">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-3.5 space-y-3 text-xs">
           {messages.map((msg) => {
             const isAI = msg.role === 'assistant';
             return (
               <div
                 key={msg.id}
-                className={`flex gap-2.5 ${isAI ? 'items-start' : 'items-start flex-row-reverse'}`}
+                className={`flex gap-2 ${isAI ? 'items-start' : 'items-start flex-row-reverse'}`}
               >
                 <div
-                  className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-medium border ${
+                  className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 text-xs font-medium border ${
                     isAI
                       ? 'bg-[#18181b] border-[#27272a] text-indigo-400 shadow-xs'
                       : 'bg-indigo-600 border-indigo-500 text-white shadow-xs'
                   }`}
                 >
-                  {isAI ? <Bot className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
+                  {isAI ? <Bot className="w-3 h-3" /> : <User className="w-3 h-3" />}
                 </div>
 
-                <div className={`space-y-1.5 max-w-[85%] ${isAI ? 'text-left' : 'text-right'}`}>
+                <div className={`space-y-1 max-w-[88%] ${isAI ? 'text-left' : 'text-right'}`}>
                   <div
-                    className={`p-3.5 rounded-xl leading-relaxed text-left relative group ${
+                    className={`p-2.5 px-3 rounded-lg leading-normal text-left relative group ${
                       isAI
-                        ? 'bg-[#18181b] border border-[#27272a] text-[#fafafa] shadow-md'
-                        : 'bg-indigo-600 text-white shadow-md'
+                        ? 'bg-[#18181b] border border-[#27272a] text-[#fafafa] shadow-xs'
+                        : 'bg-indigo-600 text-white shadow-xs'
                     }`}
                   >
                     {isAI ? (
                       <FormattedMessage text={msg.content} />
                     ) : (
-                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                      <p className="whitespace-pre-wrap text-xs">{msg.content}</p>
                     )}
 
                     {/* Copy Button for Assistant responses */}
@@ -425,7 +442,7 @@ export const FinancialChat: React.FC<FinancialChatProps> = ({
                       <button
                         onClick={() => handleCopyMessage(msg.id, msg.content)}
                         title="Copy analysis"
-                        className="absolute top-2 right-2 p-1 rounded bg-[#27272a]/60 hover:bg-[#27272a] text-[#71717a] hover:text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        className="absolute top-1.5 right-1.5 p-1 rounded bg-[#27272a]/60 hover:bg-[#27272a] text-[#71717a] hover:text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                       >
                         {copiedId === msg.id ? (
                           <Check className="w-3 h-3 text-emerald-400" />
@@ -438,8 +455,8 @@ export const FinancialChat: React.FC<FinancialChatProps> = ({
 
                   {/* Citations if available */}
                   {msg.citations && msg.citations.length > 0 && (
-                    <div className="flex items-center gap-1.5 flex-wrap text-[10px] text-[#71717a] pl-1 font-mono">
-                      <FileCheck className="w-3 h-3 text-indigo-400" />
+                    <div className="flex items-center gap-1 flex-wrap text-[9px] text-[#71717a] pl-0.5 font-mono">
+                      <FileCheck className="w-2.5 h-2.5 text-indigo-400" />
                       <span>Citations: </span>
                       {msg.citations.map((c, idx) => (
                         <span key={idx} className="px-1.5 py-0.5 rounded bg-[#18181b] text-[#a1a1aa] border border-[#27272a]">
@@ -451,37 +468,39 @@ export const FinancialChat: React.FC<FinancialChatProps> = ({
 
                   {/* Suggested followups */}
                   {msg.suggestedFollowUps && (
-                    <div className="pt-2 space-y-1">
-                      <span className="text-[10px] font-semibold text-[#71717a] block mb-1 font-mono uppercase tracking-wider">
+                    <div className="pt-1.5 space-y-1">
+                      <span className="text-[9px] font-semibold text-[#a1a1aa] block uppercase tracking-wider font-mono">
                         Recommended Deep-Dives:
                       </span>
-                      {msg.suggestedFollowUps.map((prompt, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => handleSendMessage(prompt)}
-                          className="w-full text-left p-2 rounded-lg bg-[#18181b] hover:bg-[#27272a] border border-[#27272a] text-[11px] text-[#fafafa] flex items-center justify-between transition-colors cursor-pointer group"
-                        >
-                          <span className="truncate group-hover:text-indigo-300 transition-colors">{prompt}</span>
-                          <ArrowRight className="w-3 h-3 shrink-0 ml-1 text-indigo-400 group-hover:translate-x-0.5 transition-transform" />
-                        </button>
-                      ))}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        {msg.suggestedFollowUps.map((prompt, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => handleSendMessage(prompt)}
+                            className="text-left px-2.5 py-1.5 rounded-lg bg-[#18181b] hover:bg-[#27272a] hover:border-indigo-500/50 border border-[#27272a] text-[11px] text-[#fafafa] flex items-center justify-between transition-all cursor-pointer group shadow-2xs"
+                          >
+                            <span className="truncate group-hover:text-indigo-300 font-medium">{prompt}</span>
+                            <ArrowRight className="w-3 h-3 shrink-0 ml-1 text-indigo-400 group-hover:translate-x-0.5 transition-transform" />
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
 
-                  <span className="text-[10px] text-[#71717a] block px-1 font-mono">{msg.timestamp}</span>
+                  <span className="text-[9px] text-[#71717a] block px-0.5 font-mono">{msg.timestamp}</span>
                 </div>
               </div>
             );
           })}
 
           {isLoading && (
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-[#18181b] border border-[#27272a] flex items-center justify-center text-indigo-400">
-                <Bot className="w-3.5 h-3.5 animate-spin" />
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-[#18181b] border border-[#27272a] flex items-center justify-center text-indigo-400">
+                <Bot className="w-3 h-3 animate-spin" />
               </div>
-              <div className="p-3 rounded-xl bg-[#18181b] border border-[#27272a] text-xs text-indigo-300 flex items-center gap-2 shadow-sm">
+              <div className="p-2 px-3 rounded-lg bg-[#18181b] border border-[#27272a] text-[11px] text-indigo-300 flex items-center gap-2 shadow-xs">
                 <RefreshCw className="w-3 h-3 animate-spin" />
-                <span>Computing econometric analysis via Gemini...</span>
+                <span>Computing econometric analysis...</span>
               </div>
             </div>
           )}
@@ -490,7 +509,7 @@ export const FinancialChat: React.FC<FinancialChatProps> = ({
         </div>
 
         {/* Quick Topic Chips */}
-        <div className="px-3.5 py-2 border-t border-[#27272a]/60 bg-[#121215] flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
+        <div className="px-3 py-1.5 border-t border-[#27272a]/60 bg-[#121215] flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
           {quickTopicChips.map((chip, idx) => {
             const Icon = chip.icon;
             return (
@@ -498,9 +517,9 @@ export const FinancialChat: React.FC<FinancialChatProps> = ({
                 key={idx}
                 onClick={() => handleSendMessage(chip.query)}
                 disabled={isLoading}
-                className="px-2.5 py-1 rounded-full bg-[#18181b] hover:bg-indigo-600/20 text-[#a1a1aa] hover:text-indigo-300 border border-[#27272a] hover:border-indigo-500/40 text-[11px] font-mono whitespace-nowrap flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                className="px-2 py-1 rounded-full bg-[#18181b] hover:bg-indigo-600/20 text-[#a1a1aa] hover:text-indigo-300 border border-[#27272a] hover:border-indigo-500/40 text-[10px] font-mono whitespace-nowrap flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
               >
-                <Icon className="w-3 h-3 text-indigo-400" />
+                <Icon className="w-2.5 h-2.5 text-indigo-400" />
                 <span>{chip.label}</span>
               </button>
             );
@@ -508,7 +527,7 @@ export const FinancialChat: React.FC<FinancialChatProps> = ({
         </div>
 
         {/* Input Composer */}
-        <div className="p-3 sm:p-3.5 border-t border-[#27272a] bg-[#18181b] shrink-0">
+        <div className="p-2.5 sm:p-3 border-t border-[#27272a] bg-[#18181b] shrink-0">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -532,18 +551,18 @@ export const FinancialChat: React.FC<FinancialChatProps> = ({
               }}
               autoComplete="off"
               aria-label="Ask AI about financial statements, margins, debt, and trends"
-              className="flex-1 max-h-24 px-3.5 py-2.5 rounded-lg bg-[#09090b] border border-[#27272a] text-xs text-white placeholder-[#71717a] focus:outline-none focus:border-indigo-500 transition-colors resize-none leading-relaxed"
+              className="flex-1 max-h-20 px-3 py-2 rounded-lg bg-[#09090b] border border-[#27272a] text-xs text-white placeholder-[#71717a] focus:outline-none focus:border-indigo-500 transition-colors resize-none leading-normal"
             />
             <button
               type="submit"
               disabled={!input.trim() || isLoading}
               title="Send question (Enter)"
-              className="p-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:hover:bg-indigo-600 text-white transition-all cursor-pointer shrink-0 shadow-sm"
+              className="p-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:hover:bg-indigo-600 text-white transition-all cursor-pointer shrink-0 shadow-xs"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-3.5 h-3.5" />
             </button>
           </form>
-          <div className="flex items-center justify-between text-[10px] text-[#71717a] font-mono mt-1.5 px-0.5">
+          <div className="flex items-center justify-between text-[9px] text-[#71717a] font-mono mt-1 px-0.5">
             <span>Press <kbd className="px-1 py-0.5 rounded bg-[#27272a] text-[#a1a1aa]">Enter</kbd> to send</span>
             <span>Grounded in active statement data</span>
           </div>
