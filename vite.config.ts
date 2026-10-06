@@ -1,7 +1,7 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig} from 'vite';
+import { defineConfig } from 'vite';
 
 function silenceConsolePlugin() {
   return {
@@ -66,8 +66,6 @@ export default defineConfig(() => {
       },
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       host: '0.0.0.0',
       port: 3000,
       hmr: {
@@ -76,6 +74,20 @@ export default defineConfig(() => {
         clientPort: 3000,
       },
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
+    },
+    build: {
+      chunkSizeWarningLimit: 3500,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom'],
+            'vendor-charts': ['recharts'],
+            'vendor-icons': ['lucide-react'],
+            'vendor-three': ['three'],
+            'vendor-export': ['jspdf', 'jspdf-autotable', 'xlsx'],
+          },
+        },
+      },
     },
   };
 });
